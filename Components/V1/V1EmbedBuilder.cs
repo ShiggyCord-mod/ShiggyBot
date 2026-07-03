@@ -29,6 +29,46 @@ namespace ShiggyBot.Components.V1
         public V1EmbedBuilder WithTimestamp(DateTimeOffset timestamp) { _timestamp = timestamp; return this; }
         public V1EmbedBuilder AddField(string name, string value, bool inline = false) { _fields.Add(new EmbedField(name, value, inline)); return this; }
 
+        public global::Discord.Embed BuildEmbed()
+        {
+            global::Discord.EmbedBuilder builder = new global::Discord.EmbedBuilder()
+                .WithTitle(_title ?? "")
+                .WithDescription(_description ?? "")
+                .WithColor(new global::Discord.Color((uint)_color));
+
+            if (_footerText is not null)
+            {
+                builder.WithFooter(_footerText, _footerIconUrl);
+            }
+
+            if (_timestamp is not null)
+            {
+                builder.WithTimestamp(_timestamp.Value);
+            }
+
+            if (_thumbnailUrl is not null)
+            {
+                builder.WithThumbnailUrl(_thumbnailUrl);
+            }
+
+            if (_imageUrl is not null)
+            {
+                builder.WithImageUrl(_imageUrl);
+            }
+
+            if (_authorName is not null)
+            {
+                builder.WithAuthor(_authorName, _authorIconUrl, _authorUrl);
+            }
+
+            foreach (EmbedField field in _fields)
+            {
+                builder.AddField(field.Name, field.Value, field.Inline);
+            }
+
+            return builder.Build();
+        }
+
         public void Write(Utf8JsonWriter writer)
         {
             writer.WriteStartObject();

@@ -1,3 +1,4 @@
+using Discord;
 using Discord.WebSocket;
 using ShiggyBot.Components.V1;
 
@@ -43,13 +44,23 @@ namespace ShiggyBot.Commands.Utility
                 string title = lines[0];
                 string description = lines.Length > 1 ? lines[1] : "";
 
-                V1MessageBuilder builder = new V1MessageBuilder()
-                    .AddEmbed(new V1EmbedBuilder()
-                        .WithTitle(title)
-                        .WithDescription(description)
-                        .WithColor(0x1E90FF));
+                V1EmbedBuilder embed = new V1EmbedBuilder()
+                    .WithTitle(title)
+                    .WithDescription(description)
+                    .WithColor(0x1E90FF);
 
-                await _v1Client.SendMessageAsync(message.Channel.Id, builder).ConfigureAwait(false);
+                if (message.ReferencedMessage is not null)
+                {
+                    await message.ReferencedMessage.Channel.SendMessageAsync(
+                        embed: embed.BuildEmbed(),
+                        messageReference: new MessageReference(message.ReferencedMessage.Id)).ConfigureAwait(false);
+                }
+                else
+                {
+                    V1MessageBuilder builder = new V1MessageBuilder().AddEmbed(embed);
+                    await _v1Client.SendMessageAsync(message.Channel.Id, builder).ConfigureAwait(false);
+                }
+
                 return;
             }
 
