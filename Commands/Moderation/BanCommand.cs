@@ -9,6 +9,8 @@ namespace ShiggyBot.Commands.Moderation
 {
     internal sealed class BanCommand : ICommand
     {
+        private const int PurgeDays = 7;
+
         private readonly ComponentsV1Client _v1Client;
         private readonly DatabaseService _db;
 
@@ -68,7 +70,7 @@ namespace ShiggyBot.Commands.Moderation
                 user = await PermissionHelper.ResolveUserAsync(guild, args[0]).ConfigureAwait(false);
             }
 
-            if (user == null)
+            if (user is null)
             {
                 V1MessageBuilder errorBuilder = new V1MessageBuilder()
                     .AddEmbed(new V1EmbedBuilder()
@@ -80,12 +82,12 @@ namespace ShiggyBot.Commands.Moderation
                 return;
             }
 
-            int deleteDays = 0;
-
+            string? rawDuration = null;
             TimeSpan? duration = null;
             int reasonStart = offset;
             if (args.Length > offset && TryParseDuration(args[offset], out TimeSpan parsedDuration))
             {
+                rawDuration = args[offset];
                 duration = parsedDuration;
                 reasonStart = offset + 1;
             }
@@ -94,7 +96,7 @@ namespace ShiggyBot.Commands.Moderation
 
             try
             {
-                await user.BanAsync(deleteDays, reason).ConfigureAwait(false);
+                await user.BanAsync(PurgeDays, reason).ConfigureAwait(false);
 
                 if (duration.HasValue)
                 {
@@ -110,14 +112,12 @@ namespace ShiggyBot.Commands.Moderation
                     .AddField("Moderator", message.Author.Username, true)
                     .AddField("Reason", reason, false);
 
-                if (duration.HasValue)
+                if (duration.HasValue && rawDuration is not null)
                 {
-                    embed.AddField("Duration", $"{duration.Value.TotalDays} day(s)", true);
+                    embed.AddField("Duration", rawDuration, true);
                 }
 
-                embed.AddField("Delete Messages", $"Last {deleteDays} day(s)", true);
                 embed.WithFooter("Ban action completed");
-                embed.WithTimestamp(DateTimeOffset.UtcNow);
 
                 V1MessageBuilder builder = new V1MessageBuilder().AddEmbed(embed);
                 await _v1Client.SendMessageAsync(message.Channel.Id, builder).ConfigureAwait(false);
@@ -164,6 +164,7 @@ namespace ShiggyBot.Commands.Moderation
                 {
                     return false;
                 }
+
                 return true;
             }
             catch (FormatException)
