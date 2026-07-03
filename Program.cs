@@ -13,6 +13,15 @@ AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
 
 TaskScheduler.UnobservedTaskException += (sender, args) =>
 {
+    if (args.Exception is AggregateException agg &&
+        agg.InnerException is System.Net.WebSockets.WebSocketException &&
+        agg.InnerException?.InnerException is Discord.Net.WebSocketClosedException closeEx &&
+        closeEx.CloseCode == 4003)
+    {
+        args.SetObserved();
+        return;
+    }
+
     Logger.Error($"[FATAL] Unobserved task exception", args.Exception);
     _ = WebhookLogger.SendErrorAsync(webhookUrl, "Unobserved task exception.", args.Exception, "🚨 ShiggyBot Crashed");
     args.SetObserved();

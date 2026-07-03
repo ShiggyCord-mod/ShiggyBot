@@ -1,3 +1,5 @@
+using Discord;
+using Discord.Net;
 using Discord.WebSocket;
 using Microsoft.Data.Sqlite;
 using ShiggyBot.Data;
@@ -11,7 +13,6 @@ namespace ShiggyBot.Services
 
         public void Start()
         {
-            // Check every 5 minutes
             _timer = new Timer(async _ => await CheckExpiredBansAsync().ConfigureAwait(false), null, TimeSpan.Zero, TimeSpan.FromMinutes(5));
             Logger.Info("[STARTUP] Ban check service started");
         }
@@ -23,13 +24,20 @@ namespace ShiggyBot.Services
                 List<TimedBan> expiredBans = await db.GetExpiredBansAsync().ConfigureAwait(false);
                 foreach (TimedBan ban in expiredBans)
                 {
-                    SocketGuild? guild = client.GetGuild(ban.GuildId);
-                    if (guild != null)
+                    try
                     {
-                        await guild.RemoveBanAsync(ban.UserId).ConfigureAwait(false);
-                        Console.WriteLine($"[INFO] Auto-unbanned user {ban.UserId} from guild {guild.Name}");
+                        SocketGuild? guild = client.GetGuild(ban.GuildId);
+                        if (guild != null)
+                        {
+                            await guild.RemoveBanAsync(ban.UserId).ConfigureAwait(false);
+                        }
+
+                        await db.RemoveTimedBanAsync(ban.GuildId, ban.UserId).ConfigureAwait(false);
                     }
-                    await db.RemoveTimedBanAsync(ban.GuildId, ban.UserId).ConfigureAwait(false);
+                    catch (HttpException ex) when (ex.DiscordCode == DiscordErrorCode.UnknownBan)
+                    {
+                        await db.RemoveTimedBanAsync(ban.GuildId, ban.UserId).ConfigureAwait(false);
+                    }
                 }
             }
             catch (HttpRequestException ex)
