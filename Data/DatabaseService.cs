@@ -71,6 +71,16 @@ namespace ShiggyBot.Data
             await command.ExecuteNonQueryAsync().ConfigureAwait(false);
         }
 
+        public async Task<DateTime?> GetNextUnbanTimeAsync()
+        {
+            using SqliteCommand command = _connection.CreateCommand();
+            command.CommandText = "SELECT MIN(UnbanTime) FROM TimedBans WHERE UnbanTime > $currentTime";
+            command.Parameters.AddWithValue("$currentTime", DateTime.UtcNow.ToString("o"));
+
+            string? result = await command.ExecuteScalarAsync().ConfigureAwait(false) as string;
+            return result is not null ? DateTime.Parse(result, CultureInfo.InvariantCulture) : null;
+        }
+
         public async Task<List<TimedBan>> GetExpiredBansAsync()
         {
             List<TimedBan> expiredBans = [];
