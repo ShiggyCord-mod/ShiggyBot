@@ -12,7 +12,9 @@ namespace ShiggyBot.Features
     {
         private readonly DiscordSocketClient _client;
         private static readonly HttpClient _http = new();
+        private const int MaxCacheSize = 100;
         private static readonly ConcurrentDictionary<string, CommitData> _commitCache = new();
+        private static readonly Queue<string> _cacheOrder = new();
 
         private static readonly Dictionary<string, string> LanguageMap = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -149,6 +151,22 @@ namespace ShiggyBot.Features
             return text.Length <= maxLength ? text : text[..maxLength] + "...";
         }
 
+        private static void AddToCache(string key, CommitData data)
+        {
+            lock (_cacheOrder)
+            {
+                while (_cacheOrder.Count >= MaxCacheSize)
+                {
+                    string oldest = _cacheOrder.Dequeue();
+                    _commitCache.TryRemove(oldest, out _);
+                }
+
+                _cacheOrder.Enqueue(key);
+            }
+
+            _commitCache[key] = data;
+        }
+
         private static MessageComponent? BuildPaginationButtons(string cacheKey, int totalFiles, int currentIndex, string userId)
         {
             if (totalFiles <= 1)
@@ -241,7 +259,7 @@ namespace ShiggyBot.Features
                     Url = fullUrl
                 };
 
-                _commitCache[cacheKey] = data;
+                AddToCache(cacheKey, data);
 
                 Embed embed = BuildFileEmbed(data, 0, fullUrl);
                 MessageComponent? components = BuildPaginationButtons(cacheKey, files.Count, 0, message.Author.Id.ToString(CultureInfo.InvariantCulture));

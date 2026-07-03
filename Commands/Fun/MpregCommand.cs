@@ -42,8 +42,26 @@ namespace ShiggyBot.Commands.Fun
         private static readonly HttpClient _http = new();
         private static readonly string BasePngPath = Path.Combine(AppContext.BaseDirectory, "assets", "mpreg.png");
         private static readonly byte[] BaseImageBytes = File.ReadAllBytes(BasePngPath);
+        private const int MaxCacheSize = 100;
         private static readonly ConcurrentDictionary<string, string> ResultCache = new();
+        private static readonly Queue<string> _cacheOrder = new();
         private static readonly string CacheDir = Path.Combine(Path.GetTempPath(), "shiggybot_mpreg");
+
+        private static void AddToCache(string key, string filePath)
+        {
+            lock (_cacheOrder)
+            {
+                while (_cacheOrder.Count >= MaxCacheSize)
+                {
+                    string oldest = _cacheOrder.Dequeue();
+                    ResultCache.TryRemove(oldest, out _);
+                }
+
+                _cacheOrder.Enqueue(key);
+            }
+
+            ResultCache[key] = filePath;
+        }
 
         public async Task ExecuteAsync(SocketUserMessage message, string[] args, DiscordSocketClient client)
         {
@@ -89,7 +107,7 @@ namespace ShiggyBot.Commands.Fun
                 cachedPath = Path.Combine(CacheDir, fileName);
                 if (File.Exists(cachedPath))
                 {
-                    ResultCache[cacheKey] = cachedPath;
+                    AddToCache(cacheKey, cachedPath);
                 }
                 else
                 {
@@ -120,7 +138,7 @@ namespace ShiggyBot.Commands.Fun
             string filePath = Path.Combine(CacheDir, fileName);
             await File.WriteAllBytesAsync(filePath, imageBytes).ConfigureAwait(false);
 
-            ResultCache[cacheKey] = filePath;
+            AddToCache(cacheKey, filePath);
 
             V1MessageBuilder builder2 = new V1MessageBuilder()
                 .AddEmbed(new V1EmbedBuilder()

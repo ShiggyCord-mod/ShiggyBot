@@ -14,6 +14,7 @@ namespace ShiggyBot.Discord
         private readonly GitHubStatsService _gitHub;
         private Timer? _timer;
         private int _index;
+        private volatile bool _updating;
 
         private static readonly (string Text, ActivityType Type)[] Templates =
         [
@@ -41,6 +42,12 @@ namespace ShiggyBot.Discord
 
         private void UpdatePresence(object? state)
         {
+            if (_updating)
+            {
+                return;
+            }
+
+            _updating = true;
             _ = UpdatePresenceAsync();
         }
 
@@ -62,6 +69,10 @@ namespace ShiggyBot.Discord
             }
             catch (TaskCanceledException)
             {
+            }
+            finally
+            {
+                _updating = false;
             }
         }
 
