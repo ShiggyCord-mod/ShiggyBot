@@ -25,7 +25,7 @@ dotnet publish -c Release -r linux-x64 --self-contained  # single-file publish
 
 ### Expected keys
 
-`DISCORD_TOKEN` (required), `PREFIX` (default `S`), `WELCOME_ROLE_ID`, `PRESENCE_STATUS` (default `online`), `PRESENCE_INTERVAL` (default `300`), `LOG_WEBHOOK_URL`, `HF_TOKEN`, `GITHUB_TOKEN`, `GITHUB_REPO`, `GITHUB_WEBHOOK_CHANNEL_ID`, `DEV_GUILD_ID`.
+`DISCORD_TOKEN` (required), `PREFIX` (default `S`), `WELCOME_ROLE_ID`, `PRESENCE_STATUS` (default `online`), `PRESENCE_INTERVAL` (default `300`), `LOG_WEBHOOK_URL`, `GITHUB_TOKEN`, `GITHUB_REPO`, `GITHUB_WEBHOOK_CHANNEL_ID`, `DEV_GUILD_ID`.
 
 ## Architecture
 

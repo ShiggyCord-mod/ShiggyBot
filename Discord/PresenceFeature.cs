@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Net.WebSockets;
 using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
@@ -37,6 +38,13 @@ namespace ShiggyBot.Discord
         private Task OnReadyAsync()
         {
             _timer = new Timer(UpdatePresence, null, 0, _interval);
+            _client.Disconnected += OnDisconnectedAsync;
+            return Task.CompletedTask;
+        }
+
+        private Task OnDisconnectedAsync(Exception _)
+        {
+            _timer?.Change(Timeout.Infinite, Timeout.Infinite);
             return Task.CompletedTask;
         }
 
@@ -64,10 +72,7 @@ namespace ShiggyBot.Discord
                 await _client.SetStatusAsync(status).ConfigureAwait(false);
                 _index++;
             }
-            catch (HttpRequestException)
-            {
-            }
-            catch (TaskCanceledException)
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or ObjectDisposedException or WebSocketException or InvalidOperationException)
             {
             }
             finally
@@ -80,6 +85,7 @@ namespace ShiggyBot.Discord
         {
             _timer?.Dispose();
             _client.Ready -= OnReadyAsync;
+            _client.Disconnected -= OnDisconnectedAsync;
             GC.SuppressFinalize(this);
         }
     }

@@ -13,18 +13,19 @@ AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
 
 TaskScheduler.UnobservedTaskException += (sender, args) =>
 {
-    if (args.Exception is AggregateException agg &&
-        agg.InnerException is System.Net.WebSockets.WebSocketException &&
-        agg.InnerException?.InnerException is Discord.Net.WebSocketClosedException closeEx &&
-        closeEx.CloseCode == 4003)
+    Exception? ex = args.Exception is AggregateException agg ? agg.InnerException : args.Exception;
+
+    if (ex is System.Net.WebSockets.WebSocketException or TimeoutException or ObjectDisposedException)
     {
         args.SetObserved();
         return;
     }
 
     Logger.Error($"[FATAL] Unobserved task exception", args.Exception);
-    _ = WebhookLogger.SendErrorAsync(webhookUrl, "Unobserved task exception.", args.Exception, "🚨 ShiggyBot Crashed");
     args.SetObserved();
+
+    WebhookLogger.SendErrorAsync(webhookUrl, "Unobserved task exception.", args.Exception, "🚨 ShiggyBot Crashed")
+        .ContinueWith(static t => _ = t.Exception, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
 };
 
 IConfigurationBuilder builder = new ConfigurationBuilder()
