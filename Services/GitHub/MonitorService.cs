@@ -33,7 +33,7 @@ namespace ShiggyBot.Services.GitHub
             string? token = config["GITHUB_TOKEN"];
             _http = new HttpClient();
             _http.DefaultRequestHeaders.UserAgent.ParseAdd("ShiggyBot/1.0");
-            _http.Timeout = TimeSpan.FromSeconds(15);
+            _http.Timeout = TimeSpan.FromSeconds(60);
             if (!string.IsNullOrEmpty(token))
             {
                 _http.DefaultRequestHeaders.Authorization = new("Bearer", token);
@@ -75,10 +75,19 @@ namespace ShiggyBot.Services.GitHub
 
             try
             {
-                embeds.AddRange(await _commits.PollAsync(_http, _owner, _repo).ConfigureAwait(false));
-                embeds.AddRange(await _prs.PollAsync(_http, _owner, _repo).ConfigureAwait(false));
+                IReadOnlyList<Embed>? commits = await PollWithRetryAsync(() => _commits.PollAsync(_http, _owner, _repo), "commits").ConfigureAwait(false);
+                if (commits is not null)
+                {
+                    embeds.AddRange(commits);
+                }
 
-                Embed? starEmbed = await _stars.PollAsync(_http, _owner, _repo).ConfigureAwait(false);
+                IReadOnlyList<Embed>? prs = await PollWithRetryAsync(() => _prs.PollAsync(_http, _owner, _repo), "prs").ConfigureAwait(false);
+                if (prs is not null)
+                {
+                    embeds.AddRange(prs);
+                }
+
+                Embed? starEmbed = await PollWithRetryAsync(() => _stars.PollAsync(_http, _owner, _repo), "stars").ConfigureAwait(false);
                 if (starEmbed is not null)
                 {
                     embeds.Add(starEmbed);
@@ -93,6 +102,22 @@ namespace ShiggyBot.Services.GitHub
             foreach (Embed embed in embeds)
             {
                 await SendEmbedAsync(embed).ConfigureAwait(false);
+            }
+        }
+
+        private static async Task<T?> PollWithRetryAsync<T>(Func<Task<T>> action, string label, int maxRetries = 2)
+        {
+            for (int attempt = 0; ; attempt++)
+            {
+                try
+                {
+                    return await action().ConfigureAwait(false);
+                }
+                catch (Exception ex) when (attempt < maxRetries && ex is HttpRequestException or TaskCanceledException)
+                {
+                    Logger.Warn($"[GITHUB] {label} attempt {attempt + 1}/{maxRetries + 1} failed: {ex.Message}");
+                    await Task.Delay(TimeSpan.FromSeconds(2 * (attempt + 1))).ConfigureAwait(false);
+                }
             }
         }
 
