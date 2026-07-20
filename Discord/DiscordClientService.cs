@@ -116,7 +116,7 @@ namespace ShiggyBot.Discord
                 _issueHandler = new IssueHandler(_client, _v2Client);
             }
 
-            _helpDetector = new HelpDetectorFeature(_client, _appConfig);
+            _helpDetector = new HelpDetectorFeature(_client, _appConfig, _commandHandler);
             Logger.Info("[STARTUP] Help detector feature loaded");
 
             Logger.Info("[STARTUP] Logging in to Discord...");

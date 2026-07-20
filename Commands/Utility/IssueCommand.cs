@@ -1,6 +1,7 @@
 using Discord.WebSocket;
 using ShiggyBot.Components.V2;
 using ShiggyBot.Services;
+using ShiggyBot.Utils;
 
 namespace ShiggyBot.Commands.Utility
 {
@@ -37,6 +38,11 @@ namespace ShiggyBot.Commands.Utility
         public async Task ExecuteAsync(SocketUserMessage message, string[] args, DiscordSocketClient client)
         {
             ArgumentNullException.ThrowIfNull(message);
+
+            if (!await PermissionHelper.RequireAdminAsync(message).ConfigureAwait(false))
+            {
+                return;
+            }
 
             string buttonCustomId = $"issue_create_{message.Author.Id}";
             string modalCustomId = $"issue_modal_{message.Author.Id}";

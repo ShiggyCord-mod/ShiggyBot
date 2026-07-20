@@ -40,6 +40,11 @@ namespace ShiggyBot.Utils
             return true;
         }
 
+        public static Task<bool> RequireAdminAsync(SocketUserMessage message)
+        {
+            return RequirePermissionAsync(message, GuildPermission.Administrator);
+        }
+
         public static async Task<IGuildUser?> ResolveRepliedUserAsync(SocketGuild guild, SocketUserMessage message)
         {
             if (message.ReferencedMessage is null)
