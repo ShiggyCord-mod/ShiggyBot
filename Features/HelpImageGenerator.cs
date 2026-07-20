@@ -8,6 +8,7 @@ using SixLabors.ImageSharp.Processing;
 
 namespace ShiggyBot.Features
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1810:Initialize reference types statically", Justification = "Font loading requires file I/O")]
     internal static partial class HelpImageGenerator
     {
         private const int ImageWidth = 400;
@@ -48,14 +49,14 @@ namespace ShiggyBot.Features
 
         public static async Task<byte[]?> GenerateAsync(string currentChannelName, string helpChannelName)
         {
-            if (!await GenerationLock.WaitAsync(0))
+            if (!await GenerationLock.WaitAsync(0).ConfigureAwait(false))
             {
                 return null;
             }
 
             try
             {
-                return await Task.Run(() => GenerateCore(currentChannelName, helpChannelName));
+                return await Task.Run(() => GenerateCore(currentChannelName, helpChannelName)).ConfigureAwait(false);
             }
             finally
             {
@@ -79,7 +80,7 @@ namespace ShiggyBot.Features
             DrawLabel(image, "you are here !!", ImageWidth / 2, topCardY - 30);
             DrawLabel(image, "go here instead !!", ImageWidth / 2, botCardY + cardH + 10);
 
-            image.Mutate(ctx => ctx.DrawImage(ArrowImage, new Point(ImageWidth / 2 - ArrowImage.Width / 2, topCardY + cardH + 20), 1f));
+            image.Mutate(ctx => ctx.DrawImage(ArrowImage, new Point((ImageWidth / 2) - (ArrowImage.Width / 2), topCardY + cardH + 20), 1f));
 
             using MemoryStream ms = new();
             image.SaveAsPng(ms);
