@@ -9,6 +9,8 @@
     <RootNamespace>ShiggyBot</RootNamespace>
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+    <RestoreUseStaticGraphEvaluation>true</RestoreUseStaticGraphEvaluation>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
