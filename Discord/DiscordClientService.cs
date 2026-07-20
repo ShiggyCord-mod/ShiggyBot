@@ -31,6 +31,7 @@ namespace ShiggyBot.Discord
         private CodePreviewFeature? _codePreview;
         private CommitPreviewFeature? _commitPreview;
         private IssueHandler? _issueHandler;
+        private HelpDetectorFeature? _helpDetector;
         private readonly MonitorService _gitHubWebhook;
 
         public DiscordClientService(BotConfig config, IConfiguration appConfig)
@@ -108,11 +109,15 @@ namespace ShiggyBot.Discord
             Logger.Info("[STARTUP] All features initialized.");
 
             AiImproveService.Initialize(_appConfig);
+            HelpClassificationService.Initialize(_appConfig);
 
             if (_v2Client is not null)
             {
                 _issueHandler = new IssueHandler(_client, _v2Client);
             }
+
+            _helpDetector = new HelpDetectorFeature(_client, _appConfig);
+            Logger.Info("[STARTUP] Help detector feature loaded");
 
             Logger.Info("[STARTUP] Logging in to Discord...");
             await _client.LoginAsync(TokenType.Bot, _config.Token).ConfigureAwait(false);
@@ -342,6 +347,7 @@ namespace ShiggyBot.Discord
             _autorole?.Unregister();
             _codePreview?.Unregister();
             _commitPreview?.Unregister();
+            _helpDetector?.Unregister();
             _presence?.Dispose();
             _gitHubStats?.Dispose();
             _banCheck?.Stop();

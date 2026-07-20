@@ -23,11 +23,16 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.9" />
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.104" PrivateAssets="All" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.5" />
     <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.50.3" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="assets/mpreg.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="assets/LiberationSans-Regular.ttf" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="assets/LiberationSans-Bold.ttf" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="assets/ComicNeue-Bold.ttf" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="assets/red-arrow.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
