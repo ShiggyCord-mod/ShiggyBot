@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using SixLabors.Fonts;
@@ -11,34 +10,62 @@ namespace ShiggyBot.Features
 {
     internal static partial class HelpImageGenerator
     {
-        private static readonly string ComicBoldPath = Path.Combine(AppContext.BaseDirectory, "assets", "ComicNeue-Bold.ttf");
-        private static readonly string SansPath = Path.Combine(AppContext.BaseDirectory, "assets", "LiberationSans-Regular.ttf");
-        private static readonly string SansBoldPath = Path.Combine(AppContext.BaseDirectory, "assets", "LiberationSans-Bold.ttf");
-        private static readonly string ArrowPath = Path.Combine(AppContext.BaseDirectory, "assets", "red-arrow.png");
-
         private const int ImageWidth = 400;
         private const int ImageHeight = 420;
+        private const int EmojiSize = 24;
+
+        private static readonly Font LabelFont;
+        private static readonly Font ChannelFont;
+        private static readonly Font HashFont;
+        private static readonly Image<Rgba32> ArrowImage;
+        private static readonly SemaphoreSlim GenerationLock = new(2, 2);
 
         private static readonly HttpClient HttpClient = new() { Timeout = TimeSpan.FromSeconds(5) };
-        private static readonly ConcurrentDictionary<string, Image<Rgba32>> EmojiCache = new();
 
         private static readonly Rgba32 DiscordDark = new(0x2A, 0x2C, 0x30, 255);
         private static readonly Rgba32 DiscordLight = new(0xDC, 0xDD, 0xDE, 255);
         private static readonly Rgba32 DiscordMuted = new(0x72, 0x76, 0x7D, 255);
         private static readonly Rgba32 Yellow = new(0xFE, 0xE7, 0x5C, 255);
 
-        public static byte[] Generate(string currentChannelName, string helpChannelName)
+        static HelpImageGenerator()
+        {
+            FontCollection collection = new();
+            FontFamily comicBoldFamily = collection.Add(Path.Combine(AppContext.BaseDirectory, "assets", "ComicNeue-Bold.ttf"), CultureInfo.InvariantCulture);
+            FontFamily sansFamily = collection.Add(Path.Combine(AppContext.BaseDirectory, "assets", "LiberationSans-Regular.ttf"), CultureInfo.InvariantCulture);
+            FontFamily sansBoldFamily = collection.Add(Path.Combine(AppContext.BaseDirectory, "assets", "LiberationSans-Bold.ttf"), CultureInfo.InvariantCulture);
+
+            LabelFont = comicBoldFamily.CreateFont(22, FontStyle.Bold);
+            ChannelFont = sansFamily.CreateFont(18, FontStyle.Regular);
+            HashFont = sansBoldFamily.CreateFont(20, FontStyle.Bold);
+
+            using Image<Rgba32> arrowOriginal = Image.Load<Rgba32>(Path.Combine(AppContext.BaseDirectory, "assets", "red-arrow.png"));
+            int targetH = 170;
+            float scale = targetH / (float)arrowOriginal.Height;
+            int targetW = (int)(arrowOriginal.Width * scale);
+            ArrowImage = arrowOriginal.CloneAs<Rgba32>();
+            ArrowImage.Mutate(ctx => ctx.Resize(targetW, targetH));
+        }
+
+        public static async Task<byte[]?> GenerateAsync(string currentChannelName, string helpChannelName)
+        {
+            if (!await GenerationLock.WaitAsync(0))
+            {
+                return null;
+            }
+
+            try
+            {
+                return await Task.Run(() => GenerateCore(currentChannelName, helpChannelName));
+            }
+            finally
+            {
+                GenerationLock.Release();
+            }
+        }
+
+        private static byte[] GenerateCore(string currentChannelName, string helpChannelName)
         {
             using Image<Rgba32> image = new(ImageWidth, ImageHeight);
-
-            FontCollection collection = new();
-            FontFamily comicBoldFamily = collection.Add(ComicBoldPath, CultureInfo.InvariantCulture);
-            FontFamily sansFamily = collection.Add(SansPath, CultureInfo.InvariantCulture);
-            FontFamily sansBoldFamily = collection.Add(SansBoldPath, CultureInfo.InvariantCulture);
-
-            Font labelFont = comicBoldFamily.CreateFont(22, FontStyle.Bold);
-            Font channelFont = sansFamily.CreateFont(18, FontStyle.Regular);
-            Font hashFont = sansBoldFamily.CreateFont(20, FontStyle.Bold);
 
             int cardW = 300;
             int cardH = 50;
@@ -46,20 +73,20 @@ namespace ShiggyBot.Features
             int topCardY = 50;
             int botCardY = 290;
 
-            DrawChannelCard(image, cardX, topCardY, cardW, cardH, currentChannelName, channelFont, hashFont);
-            DrawChannelCard(image, cardX, botCardY, cardW, cardH, helpChannelName, channelFont, hashFont);
+            DrawChannelCard(image, cardX, topCardY, cardW, cardH, currentChannelName);
+            DrawChannelCard(image, cardX, botCardY, cardW, cardH, helpChannelName);
 
-            DrawLabel(image, "you are here !!", ImageWidth / 2, topCardY - 30, labelFont);
-            DrawLabel(image, "go here instead !!", ImageWidth / 2, botCardY + cardH + 10, labelFont);
+            DrawLabel(image, "you are here !!", ImageWidth / 2, topCardY - 30);
+            DrawLabel(image, "go here instead !!", ImageWidth / 2, botCardY + cardH + 10);
 
-            DrawArrowDown(image, ImageWidth / 2, topCardY + cardH + 20, botCardY - 40);
+            image.Mutate(ctx => ctx.DrawImage(ArrowImage, new Point(ImageWidth / 2 - ArrowImage.Width / 2, topCardY + cardH + 20), 1f));
 
             using MemoryStream ms = new();
             image.SaveAsPng(ms);
             return ms.ToArray();
         }
 
-        private static void DrawChannelCard(Image<Rgba32> image, int x, int y, int w, int h, string channelName, Font channelFont, Font hashFont)
+        private static void DrawChannelCard(Image<Rgba32> image, int x, int y, int w, int h, string channelName)
         {
             image.Mutate(ctx =>
             {
@@ -67,39 +94,23 @@ namespace ShiggyBot.Features
                 ctx.Draw(DiscordMuted, 2, new RectangleF(x, y, w, h));
             });
 
-            image.Mutate(ctx => ctx.DrawText("#", hashFont, DiscordMuted, new PointF(x + 14, y + 12)));
-            DrawTextWithEmojis(image, channelName, channelFont, DiscordLight, x + 40, y + 14);
+            image.Mutate(ctx => ctx.DrawText("#", HashFont, DiscordMuted, new PointF(x + 14, y + 12)));
+            DrawTextWithEmojis(image, channelName, DiscordLight, x + 40, y + 14);
         }
 
-        private static void DrawLabel(Image<Rgba32> image, string text, int centerX, int y, Font font)
+        private static void DrawLabel(Image<Rgba32> image, string text, int centerX, int y)
         {
-            TextOptions options = new(font);
+            TextOptions options = new(LabelFont);
             FontRectangle size = TextMeasurer.MeasureAdvance(text, options);
             float tx = centerX - (size.Width / 2);
 
-            image.Mutate(ctx => ctx.DrawText(text, font, Yellow, new PointF(tx, y)));
+            image.Mutate(ctx => ctx.DrawText(text, LabelFont, Yellow, new PointF(tx, y)));
         }
 
-        private static void DrawArrowDown(Image<Rgba32> image, int midX, int startY, int endY)
-        {
-            using Image<Rgba32> arrowOriginal = Image.Load<Rgba32>(ArrowPath);
-            int targetH = endY - startY + 40;
-            float scale = targetH / (float)arrowOriginal.Height;
-            int targetW = (int)(arrowOriginal.Width * scale);
-
-            using Image<Rgba32> arrow = arrowOriginal.CloneAs<Rgba32>();
-            arrow.Mutate(ctx => ctx.Resize(targetW, targetH));
-
-            int x = midX - (targetW / 2);
-            int y = startY;
-            image.Mutate(ctx => ctx.DrawImage(arrow, new Point(x, y), 1f));
-        }
-
-        private static void DrawTextWithEmojis(Image<Rgba32> image, string text, Font font, Color color, float x, float y)
+        private static void DrawTextWithEmojis(Image<Rgba32> image, string text, Color color, float x, float y)
         {
             List<TextSegment> segments = ParseEmojiSegments(text);
             float currentX = x;
-            int emojiSize = (int)(font.Size * 1.1);
 
             foreach (TextSegment segment in segments)
             {
@@ -108,17 +119,15 @@ namespace ShiggyBot.Features
                     Image<Rgba32>? emojiImage = GetEmojiImage(segment.Codepoints);
                     if (emojiImage is not null)
                     {
-                        using Image<Rgba32> resized = emojiImage.CloneAs<Rgba32>();
-                        resized.Mutate(ctx => ctx.Resize(emojiSize, emojiSize));
                         int emojiY = (int)y;
-                        image.Mutate(ctx => ctx.DrawImage(resized, new Point((int)currentX - 4, emojiY), 1f));
-                        currentX += emojiSize;
+                        image.Mutate(ctx => ctx.DrawImage(emojiImage, new Point((int)currentX - 4, emojiY), 1f));
+                        currentX += EmojiSize;
                     }
                 }
                 else if (segment.Text.Length > 0)
                 {
-                    image.Mutate(ctx => ctx.DrawText(segment.Text, font, color, new PointF(currentX, y)));
-                    FontRectangle advance = TextMeasurer.MeasureAdvance(segment.Text, new TextOptions(font));
+                    image.Mutate(ctx => ctx.DrawText(segment.Text, ChannelFont, color, new PointF(currentX, y)));
+                    FontRectangle advance = TextMeasurer.MeasureAdvance(segment.Text, new TextOptions(ChannelFont));
                     currentX += advance.Width;
                 }
             }
@@ -172,11 +181,6 @@ namespace ShiggyBot.Features
 
         private static Image<Rgba32>? GetEmojiImage(string codepoints)
         {
-            if (EmojiCache.TryGetValue(codepoints, out Image<Rgba32>? cached))
-            {
-                return cached;
-            }
-
             try
             {
                 Uri url = new($"https://cdn.jsdelivr.net/gh/jdecked/twemoji@latest/assets/72x72/{codepoints}.png");
@@ -187,9 +191,9 @@ namespace ShiggyBot.Features
                 }
 
                 byte[] bytes = response.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult();
-                Image<Rgba32> image = Image.Load<Rgba32>(bytes);
-                EmojiCache[codepoints] = image;
-                return image;
+                Image<Rgba32> emoji = Image.Load<Rgba32>(bytes);
+                emoji.Mutate(ctx => ctx.Resize(EmojiSize, EmojiSize));
+                return emoji;
             }
             catch (HttpRequestException)
             {

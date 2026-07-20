@@ -114,7 +114,13 @@ namespace ShiggyBot.Features
 
                 try
                 {
-                    byte[] imageBytes = HelpImageGenerator.Generate(currentName, helpName);
+                    byte[]? imageBytes = await HelpImageGenerator.GenerateAsync(currentName, helpName).ConfigureAwait(false);
+
+                    if (imageBytes is null)
+                    {
+                        return;
+                    }
+
                     string fileName = "help_pointer.png";
 
                     using MemoryStream stream = new(imageBytes);
