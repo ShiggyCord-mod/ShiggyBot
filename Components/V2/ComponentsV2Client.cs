@@ -22,8 +22,8 @@ namespace ShiggyBot.Components.V2
             _baseUrl = "https://discord.com/api/v10";
         }
 
-        /// <summary>Sends a V2 component message to a channel.</summary>
-        public async Task<bool> SendMessageAsync(
+        /// <returns>The sent message ID, or null on failure.</returns>
+        public async Task<ulong?> SendMessageAsync(
             ulong channelId,
             V2MessageBuilder builder,
             CancellationToken cancellationToken = default)
@@ -84,7 +84,31 @@ namespace ShiggyBot.Components.V2
                 {
                     if (response.IsSuccessStatusCode)
                     {
-                        return true;
+                        string responseBody = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                        try
+                        {
+                            using System.Text.Json.JsonDocument doc = System.Text.Json.JsonDocument.Parse(responseBody);
+                            if (doc.RootElement.TryGetProperty("id", out System.Text.Json.JsonElement idElement))
+                            {
+                                if (idElement.ValueKind == System.Text.Json.JsonValueKind.Number
+                                    && idElement.TryGetUInt64(out ulong numId))
+                                {
+                                    return numId;
+                                }
+
+                                if (idElement.ValueKind == System.Text.Json.JsonValueKind.String
+                                    && idElement.GetString() is string idStr
+                                    && ulong.TryParse(idStr, out ulong strId))
+                                {
+                                    return strId;
+                                }
+                            }
+                        }
+                        catch (System.Text.Json.JsonException)
+                        {
+                        }
+
+                        return 0;
                     }
 
                     if ((int)response.StatusCode == 429)
@@ -114,11 +138,11 @@ namespace ShiggyBot.Components.V2
                     }
 
                     Logger.Error($"[V2] Failed to send message: {response.StatusCode} {body}");
-                    return false;
+                    return null;
                 }
             }
 
-            return false;
+            return null;
         }
 
         /// <summary>Edits an existing message with V2 components.</summary>

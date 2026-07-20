@@ -30,6 +30,7 @@ namespace ShiggyBot.Discord
         private GitHubStatsService? _gitHubStats;
         private CodePreviewFeature? _codePreview;
         private CommitPreviewFeature? _commitPreview;
+        private IssueHandler? _issueHandler;
         private readonly MonitorService _gitHubWebhook;
 
         public DiscordClientService(BotConfig config, IConfiguration appConfig)
@@ -58,6 +59,7 @@ namespace ShiggyBot.Discord
             _client.MessageReceived += OnMessageAsync;
             _client.SelectMenuExecuted += OnSelectMenuExecutedAsync;
             _client.ButtonExecuted += OnButtonExecutedAsync;
+            _client.ModalSubmitted += OnModalSubmittedAsync;
 
             Logger.Info("[INIT] Discord client created");
 
@@ -104,6 +106,13 @@ namespace ShiggyBot.Discord
             _commitPreview = new(_client);
             Logger.Info("[STARTUP] Commit preview feature loaded");
             Logger.Info("[STARTUP] All features initialized.");
+
+            AiImproveService.Initialize(_appConfig);
+
+            if (_v2Client is not null)
+            {
+                _issueHandler = new IssueHandler(_client, _v2Client);
+            }
 
             Logger.Info("[STARTUP] Logging in to Discord...");
             await _client.LoginAsync(TokenType.Bot, _config.Token).ConfigureAwait(false);
@@ -182,6 +191,11 @@ namespace ShiggyBot.Discord
                     return;
                 }
 
+                if (_issueHandler is not null && _issueHandler.TryHandleButton(component))
+                {
+                    return;
+                }
+
                 await component.RespondAsync("This button is no longer available.", ephemeral: true).ConfigureAwait(false);
             }
             catch (InvalidOperationException)
@@ -228,6 +242,11 @@ namespace ShiggyBot.Discord
             {
                 if (component.Data.CustomId != "help_category_select")
                 {
+                    if (_issueHandler is not null && _issueHandler.TryHandleSelectMenu(component))
+                    {
+                        return;
+                    }
+
                     return;
                 }
 
@@ -291,6 +310,31 @@ namespace ShiggyBot.Discord
             {
                 ErrorHandler.LogError("Database error in select menu handler", ex);
             }
+        }
+
+        private Task OnModalSubmittedAsync(SocketModal modal)
+        {
+            try
+            {
+                if (_issueHandler is not null && _issueHandler.TryHandleModal(modal))
+                {
+                    return Task.CompletedTask;
+                }
+            }
+            catch (InvalidOperationException ex)
+            {
+                ErrorHandler.LogError("Discord error in modal handler", ex);
+            }
+            catch (TimeoutException ex)
+            {
+                ErrorHandler.LogError("Timeout in modal handler", ex);
+            }
+            catch (SqliteException ex)
+            {
+                ErrorHandler.LogError("Database error in modal handler", ex);
+            }
+
+            return Task.CompletedTask;
         }
 
         public void Dispose()

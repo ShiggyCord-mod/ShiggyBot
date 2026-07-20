@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Discord.WebSocket;
+using ShiggyBot.Utils;
 
 namespace ShiggyBot.Services
 {
@@ -34,11 +35,57 @@ namespace ShiggyBot.Services
             string key = component.Data.CustomId;
             if (_handlers.TryRemove(key, out Func<SocketMessageComponent, Task>? handler))
             {
-                // Fire and forget; ensure we don't block the interaction pipeline
-                _ = handler(component);
+                _ = HandleSafeAsync(component, handler);
                 return true;
             }
             return false;
+        }
+
+        private static async Task HandleSafeAsync(SocketMessageComponent component, Func<SocketMessageComponent, Task> handler)
+        {
+            try
+            {
+                await handler(component).ConfigureAwait(false);
+            }
+            catch (HttpRequestException ex)
+            {
+                Logger.Error($"[BUTTON] Handler failed for '{component.Data.CustomId}': {ex.Message}", ex);
+                await SendFallbackResponseAsync(component).ConfigureAwait(false);
+            }
+            catch (InvalidOperationException ex)
+            {
+                Logger.Error($"[BUTTON] Handler failed for '{component.Data.CustomId}': {ex.Message}", ex);
+                await SendFallbackResponseAsync(component).ConfigureAwait(false);
+            }
+            catch (TimeoutException ex)
+            {
+                Logger.Error($"[BUTTON] Handler failed for '{component.Data.CustomId}': {ex.Message}", ex);
+                await SendFallbackResponseAsync(component).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException ex)
+            {
+                Logger.Error($"[BUTTON] Handler failed for '{component.Data.CustomId}': {ex.Message}", ex);
+                await SendFallbackResponseAsync(component).ConfigureAwait(false);
+            }
+            catch (global::Discord.Net.HttpException ex)
+            {
+                Logger.Error($"[BUTTON] Handler failed for '{component.Data.CustomId}': {ex.Message}", ex);
+                await SendFallbackResponseAsync(component).ConfigureAwait(false);
+            }
+        }
+
+        private static async Task SendFallbackResponseAsync(SocketMessageComponent component)
+        {
+            try
+            {
+                await component.RespondAsync("An error occurred while processing this interaction.", ephemeral: true).ConfigureAwait(false);
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            catch (TimeoutException)
+            {
+            }
         }
     }
 }

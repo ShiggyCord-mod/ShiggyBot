@@ -78,6 +78,7 @@ namespace ShiggyBot.Services
                 Register(new TimeoutCommand(_v2Client));
                 Register(new BanCommand(_v2Client, _db));
                 Register(new V2TestCommand(_v2Client));
+                Register(new IssueCommand(_v2Client));
             }
         }
 

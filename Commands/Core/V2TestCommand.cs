@@ -106,9 +106,9 @@ namespace ShiggyBot.Commands.Core
                 return;
             }
 
-            bool success = await _v2Client.SendMessageAsync(message.Channel.Id, builder).ConfigureAwait(false);
+            ulong? messageId = await _v2Client.SendMessageAsync(message.Channel.Id, builder).ConfigureAwait(false);
 
-            if (!success)
+            if (messageId is null)
             {
                 await message.Channel.SendMessageAsync(embed: EmbedHelper.BuildErrorEmbed("Failed to send V2 message. Check logs for details.")).ConfigureAwait(false);
             }
