@@ -7,12 +7,15 @@
     <Nullable>enable</Nullable>
     <AssemblyName>ShiggyBot</AssemblyName>
     <RootNamespace>ShiggyBot</RootNamespace>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisMode>All</AnalysisMode>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <ServerGarbageCollection>false</ServerGarbageCollection>
-    <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
   </PropertyGroup>
 
   <ItemGroup>
