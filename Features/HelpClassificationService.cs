@@ -8,10 +8,11 @@ namespace ShiggyBot.Features
     {
         private static readonly HttpClient Http = new();
 
-        private const string SystemPrompt = "You are a help-seeking message classifier for a Discord server. "
-            + "Given a user's recent messages, determine if they are asking for technical help or reporting a problem. "
-            + "Reply with ONLY the word YES if they need help, or ONLY the word NO if they don't. "
-            + "Be generous — if someone seems confused, frustrated, or is describing something going wrong, say YES.";
+        private const string SystemPrompt = "You are a classifier for a Discord gaming server. "
+            + "Determine if the user is asking for TECHNICAL HELP or REPORTING A BUG — meaning they have a specific problem with software, hardware, or a service and want a solution. "
+            + "Reply YES ONLY if the message clearly describes a technical issue and asks for help fixing it. "
+            + "Reply NO in ALL other cases: casual chat, opinions, jokes, slurs, insults, greetings, questions about server rules/channels, feature requests, game discussions, or any non-technical topic. "
+            + "Do NOT assume frustration or confusion means they need help — they must explicitly describe a technical problem.";
 
         public static bool IsEnabled { get; private set; }
 

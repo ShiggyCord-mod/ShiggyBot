@@ -9,8 +9,8 @@ namespace ShiggyBot.Utils
     {
         public static bool HasPermission(SocketUserMessage message, GuildPermission required)
         {
-            return message.Author is SocketGuildUser guildUser &&
-                (guildUser.GuildPermissions.Has(required) || guildUser.GuildPermissions.Administrator);
+            return message.Author is SocketGuildUser guildUser
+                && (guildUser.GuildPermissions.Administrator || guildUser.GuildPermissions.Has(required));
         }
 
         public static string GetPermissionName(GuildPermission permission)
