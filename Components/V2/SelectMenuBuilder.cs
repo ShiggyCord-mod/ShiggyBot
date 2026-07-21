@@ -42,7 +42,17 @@ namespace ShiggyBot.Components.V2
         /// <summary>Adds an option to the select menu.</summary>
         public SelectMenuBuilder AddOption(string label, string value, string? description = null, string? emojiName = null)
         {
-            _options.Add(new SelectOption(label, value, description, emojiName));
+            if (string.IsNullOrWhiteSpace(label))
+            {
+                throw new ArgumentException("Select menu option label must not be empty.", nameof(label));
+            }
+
+            // Discord limits: label max 25 chars, value max 100 chars, description max 100 chars.
+            string safeLabel = label.Length > 25 ? label[..25] : label;
+            string safeValue = value.Length > 100 ? value[..100] : value;
+            string? safeDescription = description is null ? null : (description.Length > 100 ? description[..100] : description);
+
+            _options.Add(new SelectOption(safeLabel, safeValue, safeDescription, emojiName));
             return this;
         }
 
@@ -90,7 +100,11 @@ namespace ShiggyBot.Components.V2
                 writer.WriteStartObject();
                 writer.WriteString("label", _label);
                 writer.WriteString("value", _value);
-                writer.WriteString("description", _description ?? "");
+                if (_description is not null)
+                {
+                    writer.WriteString("description", _description);
+                }
+
                 if (_emojiName is not null)
                 {
                     writer.WriteStartObject("emoji");
