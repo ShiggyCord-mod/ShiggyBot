@@ -9,8 +9,15 @@ namespace ShiggyBot.Utils
     {
         public static bool HasPermission(SocketUserMessage message, GuildPermission required)
         {
-            return message.Author is SocketGuildUser guildUser
-                && (guildUser.GuildPermissions.Administrator || guildUser.GuildPermissions.Has(required));
+            if (message.Channel is not SocketGuildChannel guildChannel)
+            {
+                return false;
+            }
+
+            SocketGuild guild = guildChannel.Guild;
+            SocketGuildUser? guildUser = message.Author as SocketGuildUser ?? guild.GetUser(message.Author.Id);
+
+            return guildUser is not null && (guildUser.GuildPermissions.Administrator || guildUser.GuildPermissions.Has(required));
         }
 
         public static string GetPermissionName(GuildPermission permission)
@@ -20,7 +27,7 @@ namespace ShiggyBot.Utils
 
         public static async Task<bool> RequirePermissionAsync(SocketUserMessage message, GuildPermission required)
         {
-            if (message.Channel is not SocketGuildChannel)
+            if (message.Channel is not SocketGuildChannel guildChannel)
             {
                 await message.Channel.SendMessageAsync(
                     embed: EmbedHelper.BuildErrorEmbed("This command can only be used in a server.")
@@ -28,7 +35,30 @@ namespace ShiggyBot.Utils
                 return false;
             }
 
-            if (!HasPermission(message, required))
+            SocketGuild guild = guildChannel.Guild;
+            SocketGuildUser? guildUser = message.Author as SocketGuildUser ?? guild.GetUser(message.Author.Id);
+
+            if (guildUser is null)
+            {
+                try
+                {
+                    guildUser = await ((IGuild)guild).GetUserAsync(message.Author.Id).ConfigureAwait(false) as SocketGuildUser;
+                }
+                catch (HttpRequestException)
+                {
+                    guildUser = null;
+                }
+            }
+
+            if (guildUser is null)
+            {
+                await message.Channel.SendMessageAsync(
+                    embed: EmbedHelper.BuildErrorEmbed("Could not resolve your server membership. Try again later.")
+                ).ConfigureAwait(false);
+                return false;
+            }
+
+            if (!(guildUser.GuildPermissions.Administrator || guildUser.GuildPermissions.Has(required)))
             {
                 string permName = GetPermissionName(required);
                 await message.Channel.SendMessageAsync(
