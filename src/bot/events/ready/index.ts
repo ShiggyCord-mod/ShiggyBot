@@ -6,6 +6,7 @@ import type { Event } from '@dtypes/bot';
 import { GuildModelHelper } from '@database/models/guild.js';
 import { getEnvironment } from '@config/environment.js';
 import { PresenceFeature } from '@features/presence';
+import { AutoModerationFeature } from '@features/autoModeration';
 
 const event: Event = {
   name: 'clientReady',
@@ -32,6 +33,9 @@ const event: Event = {
     } catch (error) {
       logger.error('Failed to start presence', { error: error as Error });
     }
+
+    const autoModeration = new AutoModerationFeature(client);
+    autoModeration.start();
 
     const guilds = client.guilds.cache;
     logger.info(`Serving ${guilds.size} guilds`);

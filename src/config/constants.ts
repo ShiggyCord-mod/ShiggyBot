@@ -33,10 +33,7 @@ export const TIMESTAMPS = {
 } as const;
 
 export const REGEX_PATTERNS = {
-  discordId: /^\d{17,19}$/,
   // eslint-disable-next-line security/detect-unsafe-regex
   discordInvite: /(https?:\/\/)?(www\.)?(discord\.(gg|io|me|li)|discordapp\.com\/invite)\/.+/i,
-  // eslint-disable-next-line security/detect-unsafe-regex
-  url: /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/,
   email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
 } as const;
