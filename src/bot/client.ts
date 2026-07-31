@@ -12,9 +12,7 @@ import type {
   SelectCommand,
   ModalCommand,
 } from '@dtypes/bot';
-import { CommandHandler } from './handlers/commandHandler.js';
-import { EventHandler } from './handlers/eventHandler.js';
-import { ComponentHandler } from './handlers/componentHandler.js';
+import { CommandHandler, EventHandler, ComponentHandler } from '@handlers/index.js';
 
 export class BotClient extends Client {
   public commands: Collection<string, SlashCommand> = new Collection();
