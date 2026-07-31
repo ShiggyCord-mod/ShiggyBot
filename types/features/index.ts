@@ -4,6 +4,7 @@ export interface PresenceRotationOptions {
   status: PresenceStatusData;
   intervalMs: number;
   repoName: string;
+  githubToken?: string;
 }
 
 export interface GitHubRepoStats {

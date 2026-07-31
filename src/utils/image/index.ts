@@ -22,6 +22,7 @@ export async function getDominantColor(input: Buffer): Promise<number> {
   for (let i = 0; i < data.length; i += 4) {
     if (data[i + 3] < 128) continue;
 
+    // eslint-disable-next-line security/detect-object-injection
     const key = ((data[i] >> 5) << 10) | ((data[i + 1] >> 5) << 5) | (data[i + 2] >> 5);
     buckets.set(key, (buckets.get(key) ?? 0) + 1);
     total++;

@@ -14,7 +14,7 @@ export class PresenceFeature {
   constructor(client: Client, options: PresenceRotationOptions) {
     this.client = client;
     this.options = options;
-    this.githubStats = new GitHubStatsService(options.repoName);
+    this.githubStats = new GitHubStatsService(options.repoName, options.githubToken);
   }
 
   async start(): Promise<void> {

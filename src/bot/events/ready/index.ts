@@ -2,10 +2,10 @@ import type { Client, PresenceStatusData } from 'discord.js';
 import { BOT_INFO } from '@config/constants.js';
 import { logger } from '@logger/index.js';
 import { database } from '@database/index.js';
-import type { Event } from '@dtypes/bot/index.js';
+import type { Event } from '@dtypes/bot';
 import { GuildModelHelper } from '@database/models/guild.js';
 import { getEnvironment } from '@config/environment.js';
-import { PresenceFeature } from '@features/presence/index.js';
+import { PresenceFeature } from '@features/presence';
 
 const event: Event = {
   name: 'clientReady',
@@ -24,6 +24,7 @@ const event: Event = {
         status: env.PRESENCE_STATUS as PresenceStatusData,
         intervalMs: env.PRESENCE_INTERVAL * 1000,
         repoName: env.GITHUB_REPO,
+        githubToken: env.GITHUB_TOKEN,
       });
 
       await presence.start();
