@@ -1,6 +1,6 @@
 import { MessageFlags, TextChannel, PermissionFlagsBits } from 'discord.js';
 import type { Message } from 'discord.js';
-import type { PrefixCommand } from '@dtypes/bot/index.js';
+import type { PrefixCommand } from '@dtypes/bot';
 import {
   ContainerBuilder,
   TextDisplayBuilder,
@@ -9,7 +9,7 @@ import {
   SectionBuilder,
   ThumbnailBuilder,
 } from 'discord.js';
-import { resolveUser, parseDuration } from '@utils/resolve/index.js';
+import { resolveUser, parseDuration } from '@utils/resolve';
 import { database } from '@database/index.js';
 
 const PURGE_DAYS = 7;

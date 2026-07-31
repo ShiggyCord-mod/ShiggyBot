@@ -5,7 +5,7 @@ import {
   SeparatorBuilder,
   SeparatorSpacingSize,
 } from 'discord.js';
-import type { SelectCommand } from '@dtypes/bot/index.js';
+import type { SelectCommand } from '@dtypes/bot';
 import { getEnvironment } from '@config/environment.js';
 
 const CATEGORY_COLORS: Record<string, number> = {

@@ -1,5 +1,5 @@
-import { Collection } from 'discord.js';
-import type { ButtonCommand, SelectCommand, ModalCommand } from '@dtypes/bot/index.js';
+import { Collection } from '@discordjs/collection';
+import type { ButtonCommand, SelectCommand, ModalCommand } from '@dtypes/bot';
 import { logger } from '@logger/index.js';
 import { readdirSync, statSync } from 'fs';
 import { join } from 'path';

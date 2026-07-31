@@ -8,7 +8,7 @@ import {
 import type { Message, PermissionResolvable } from 'discord.js';
 import { logger } from '@logger/index.js';
 import { database } from '@database/index.js';
-import type { Event, PrefixCommand } from '@dtypes/bot/index.js';
+import type { Event, PrefixCommand } from '@dtypes/bot';
 import { getEnvironment } from '@config/environment.js';
 
 const event: Event = {

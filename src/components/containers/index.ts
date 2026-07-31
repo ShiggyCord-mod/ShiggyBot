@@ -25,6 +25,20 @@ export function ErrorContainer(title: string, description: string): ContainerBui
     .addTextDisplayComponents(new TextDisplayBuilder().setContent(description));
 }
 
+export function AccentContainer(
+  title: string,
+  description: string,
+  color: number
+): ContainerBuilder {
+  return new ContainerBuilder()
+    .setAccentColor(color)
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(`**${title}**`))
+    .addSeparatorComponents(
+      new SeparatorBuilder().setDivider(true).setSpacing(SeparatorSpacingSize.Small)
+    )
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(description));
+}
+
 export function WarningContainer(title: string, description: string): ContainerBuilder {
   return new ContainerBuilder()
     .setAccentColor(0xffff00)

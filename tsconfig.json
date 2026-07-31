@@ -24,7 +24,8 @@
       "@dtypes/*": ["./types/*"],
       "@utils/*": ["./src/utils/*"],
       "@bot/*": ["./src/bot/*"],
-      "@components/*": ["./src/components/*"]
+      "@components/*": ["./src/components/*"],
+      "@features/*": ["./src/features/*"]
     },
     "types": [
       "bun-types",

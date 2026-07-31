@@ -1,6 +1,6 @@
 import winston from 'winston';
 import { createTransports } from './transports/index.js';
-import type { LoggerConfig, LogMetadata } from '@dtypes/logger/types.js';
+import type { LoggerConfig, LogMetadata } from '@dtypes/logger';
 import { getEnvironment } from '@config/environment.js';
 
 export class Logger {

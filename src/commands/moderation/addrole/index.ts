@@ -1,13 +1,13 @@
 import { MessageFlags, TextChannel, PermissionFlagsBits } from 'discord.js';
 import type { Message } from 'discord.js';
-import type { PrefixCommand } from '@dtypes/bot/index.js';
+import type { PrefixCommand } from '@dtypes/bot';
 import {
   ContainerBuilder,
   TextDisplayBuilder,
   SeparatorBuilder,
   SeparatorSpacingSize,
 } from 'discord.js';
-import { resolveUser, resolveRole } from '@utils/resolve/index.js';
+import { resolveUser, resolveRole } from '@utils/resolve';
 
 const command: PrefixCommand = {
   name: 'addrole',

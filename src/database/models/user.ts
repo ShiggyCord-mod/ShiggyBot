@@ -1,4 +1,4 @@
-import type { UserModel, UserSettings } from '@dtypes/database/index.js';
+import type { UserModel, UserSettings } from '@dtypes/database';
 
 export class UserModelHelper {
   static createDefault(discordId: string, username: string, discriminator: string): UserModel {

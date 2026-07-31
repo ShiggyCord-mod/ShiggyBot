@@ -5,7 +5,7 @@ import {
   SeparatorSpacingSize,
   SectionBuilder,
 } from 'discord.js';
-import { PrimaryButton, SecondaryButton } from '@components/buttons/index.js';
+import { PrimaryButton, SecondaryButton } from '@components/buttons';
 import type { PluginResult } from '@dtypes/commands';
 import { highlightMatch } from '../services/searchService.js';
 

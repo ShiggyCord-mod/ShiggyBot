@@ -1,4 +1,4 @@
-import type { GuildModel, GuildSettings } from '@dtypes/database/index.js';
+import type { GuildModel, GuildSettings } from '@dtypes/database';
 
 export class GuildModelHelper {
   static createDefault(discordId: string, name: string, ownerId: string): GuildModel {

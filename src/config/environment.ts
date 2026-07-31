@@ -16,6 +16,12 @@ const envSchema = z.object({
     .default('false')
     .transform((val) => val === 'true'),
 
+  PRESENCE_STATUS: z.enum(['online', 'idle', 'dnd', 'invisible']).default('idle'),
+  PRESENCE_INTERVAL: z.coerce.number().min(1).default(5),
+
+  GITHUB_REPO: z.string().default('kmmiio99o/ShiggyCord'),
+  GITHUB_TOKEN: z.string().optional(),
+
   DATABASE_PATH: z.string().default('./data/database.db'),
   DATABASE_URL: z.string().optional(),
 

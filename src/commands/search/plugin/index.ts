@@ -1,6 +1,6 @@
 import { MessageFlags, TextChannel } from 'discord.js';
 import type { Message } from 'discord.js';
-import type { PrefixCommand } from '@dtypes/bot/index.js';
+import type { PrefixCommand } from '@dtypes/bot';
 import { searchPlugin } from './services/searchService.js';
 import {
   buildPluginContainer,

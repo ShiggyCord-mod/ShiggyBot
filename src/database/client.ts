@@ -6,7 +6,7 @@ import type {
   EconomyModel,
   ReminderModel,
   TagModel,
-} from '@dtypes/database/index.js';
+} from '@dtypes/database';
 import { getEnvironment } from '@config/environment.js';
 import { logger } from '@logger/index.js';
 import { mkdirSync } from 'fs';

@@ -1,10 +1,11 @@
 import type { Client, PresenceStatusData } from 'discord.js';
-import { ActivityType } from 'discord.js';
 import { BOT_INFO } from '@config/constants.js';
 import { logger } from '@logger/index.js';
 import { database } from '@database/index.js';
 import type { Event } from '@dtypes/bot/index.js';
 import { GuildModelHelper } from '@database/models/guild.js';
+import { getEnvironment } from '@config/environment.js';
+import { PresenceFeature } from '@features/presence/index.js';
 
 const event: Event = {
   name: 'clientReady',
@@ -17,20 +18,18 @@ const event: Event = {
     logger.info(`${BOT_INFO.name} v${BOT_INFO.version} is ready!`);
 
     try {
-      await client.user.setPresence({
-        status: 'idle' as PresenceStatusData,
-        activities: [
-          {
-            name: 'with ComponentsV2',
-            type: ActivityType.Playing,
-          },
-        ],
-        afk: false,
+      const env = getEnvironment();
+
+      const presence = new PresenceFeature(client, {
+        status: env.PRESENCE_STATUS as PresenceStatusData,
+        intervalMs: env.PRESENCE_INTERVAL * 1000,
+        repoName: env.GITHUB_REPO,
       });
 
-      logger.info('Presence set successfully (idle)');
+      await presence.start();
+      logger.info('Presence rotation started', { context: 'Ready' });
     } catch (error) {
-      logger.error('Failed to set presence', { error: error as Error });
+      logger.error('Failed to start presence', { error: error as Error });
     }
 
     const guilds = client.guilds.cache;

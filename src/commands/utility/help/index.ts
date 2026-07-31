@@ -1,6 +1,6 @@
 import { MessageFlags, TextChannel, StringSelectMenuBuilder, ActionRowBuilder } from 'discord.js';
 import type { Message, Client } from 'discord.js';
-import type { PrefixCommand } from '@dtypes/bot/index.js';
+import type { PrefixCommand } from '@dtypes/bot';
 import { getEnvironment } from '@config/environment.js';
 import {
   ContainerBuilder,

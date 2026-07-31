@@ -1,12 +1,6 @@
-import {
-  Client,
-  Collection,
-  GatewayIntentBits,
-  Partials,
-  REST,
-  Routes,
-  ActivityType,
-} from 'discord.js';
+import { Client, GatewayIntentBits, Partials, Routes, ActivityType } from 'discord.js';
+import { Collection } from '@discordjs/collection';
+import { REST } from '@discordjs/rest';
 import type { Snowflake } from 'discord.js';
 import { getEnvironment } from '@config/environment.js';
 import { logger } from '@logger/index.js';
@@ -17,7 +11,7 @@ import type {
   ButtonCommand,
   SelectCommand,
   ModalCommand,
-} from '@dtypes/bot/index.js';
+} from '@dtypes/bot';
 import { CommandHandler } from './handlers/commandHandler.js';
 import { EventHandler } from './handlers/eventHandler.js';
 import { ComponentHandler } from './handlers/componentHandler.js';

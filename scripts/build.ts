@@ -8,12 +8,8 @@ const ENTRY = join(import.meta.dir, '..', 'src', 'index.ts');
 const EXTERNAL = [
   'sharp',
   'canvas',
-  'sodium-native',
   'bufferutil',
   'utf-8-validate',
-  'prism-media',
-  '@discordjs/opus',
-  '@discordjs/voice',
 ];
 
 console.log('Cleaning dist...');

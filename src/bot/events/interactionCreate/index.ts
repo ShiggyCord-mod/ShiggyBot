@@ -2,7 +2,7 @@ import { Collection } from 'discord.js';
 import type { Interaction } from 'discord.js';
 import { logger } from '@logger/index.js';
 import { database } from '@database/index.js';
-import type { Event } from '@dtypes/bot/index.js';
+import type { Event } from '@dtypes/bot';
 
 const event: Event = {
   name: 'interactionCreate',

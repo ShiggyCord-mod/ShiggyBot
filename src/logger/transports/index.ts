@@ -1,6 +1,6 @@
 import winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
-import type { LoggerConfig } from '@dtypes/logger/types.js';
+import type { LoggerConfig } from '@dtypes/logger';
 import { mkdirSync } from 'fs';
 
 const { combine, timestamp, printf, colorize } = winston.format;

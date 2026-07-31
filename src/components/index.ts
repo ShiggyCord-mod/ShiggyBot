@@ -3,6 +3,7 @@ export {
   ErrorContainer,
   WarningContainer,
   InfoContainer,
+  AccentContainer,
 } from './containers/index.js';
 export {
   PrimarySeparator,
