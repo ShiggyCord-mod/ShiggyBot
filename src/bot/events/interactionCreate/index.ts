@@ -1,7 +1,6 @@
 import { Collection } from 'discord.js';
 import type { Interaction } from 'discord.js';
 import { logger } from '@logger/index.js';
-import { database } from '@database/index.js';
 import type { Event } from '@dtypes/bot';
 
 const event: Event = {
@@ -140,16 +139,6 @@ async function handleSlashCommand(interaction: any): Promise<void> {
       command: command.name,
       userId: interaction.user.id,
       guildId: interaction.guild?.id,
-    });
-
-    database.logCommand({
-      command: command.name,
-      userId: interaction.user.id,
-      guildId: interaction.guild?.id || null,
-      channelId: interaction.channelId,
-      success: true,
-      executionTime: Date.now() - now,
-      createdAt: new Date(),
     });
   } catch (error) {
     logger.error(`Error executing command ${command.name}`, { error: error as Error });

@@ -11,26 +11,35 @@ async function main() {
     logger.debug('Debug mode enabled');
 
     const client = new BotClient();
+
+    client.on('error', (error) => {
+      const err = error as Error;
+      logger.error(`Discord client error: ${err.message}`, { error: err });
+    });
+
     await client.start();
 
-    process.on('SIGINT', async () => {
-      logger.info('Received SIGINT, shutting down...');
-      client.destroy();
+    function shutdown(reason: string): void {
+      logger.info(`Received ${reason}, shutting down...`);
+      try {
+        client.destroy();
+      } catch (error) {
+        const err = error as Error;
+        logger.warn(`Error during shutdown: ${err.message}`, { error: err });
+      }
       process.exit(0);
-    });
+    }
 
-    process.on('SIGTERM', async () => {
-      logger.info('Received SIGTERM, shutting down...');
-      client.destroy();
-      process.exit(0);
-    });
+    process.on('SIGINT', () => shutdown('SIGINT'));
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
 
-    process.on('unhandledRejection', (error) => {
-      logger.error('Unhandled rejection', { error: error as Error });
+    process.on('unhandledRejection', (reason) => {
+      const error = reason instanceof Error ? reason : new Error(String(reason));
+      logger.error(`Unhandled rejection: ${error.stack ?? error.message}`, { error });
     });
 
     process.on('uncaughtException', (error) => {
-      logger.error('Uncaught exception', { error });
+      logger.error(`Uncaught exception: ${error.stack ?? error.message}`, { error });
       process.exit(1);
     });
   } catch (error) {

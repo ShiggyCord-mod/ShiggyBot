@@ -184,16 +184,6 @@ const event: Event = {
         guildId: message.guild.id,
         executionTime,
       });
-
-      database.logCommand({
-        command: command.name,
-        userId: message.author.id,
-        guildId: message.guild.id,
-        channelId: message.channel.id,
-        success: true,
-        executionTime,
-        createdAt: new Date(),
-      });
     } catch (error) {
       const errMessage = error instanceof Error ? error.message : String(error);
       const errStack = error instanceof Error ? error.stack : undefined;

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const snowflakeSchema = z.string().regex(/^\d{17,19}$/, 'Invalid Discord snowflake');
+export const snowflakeSchema = z.string().regex(/^\d{18,19}$/, 'Invalid Discord snowflake');
 
 export const emailSchema = z.string().email('Invalid email address');
 

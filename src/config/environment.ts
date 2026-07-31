@@ -25,6 +25,15 @@ const envSchema = z.object({
   DATABASE_PATH: z.string().default('./data/database.db'),
   DATABASE_URL: z.string().optional(),
 
+  DASHBOARD_TOKEN: z.string().optional(),
+  DASHBOARD_HOST: z.string().default('127.0.0.1'),
+  DASHBOARD_PORT: z.coerce.number().min(1).max(65535).default(3000),
+  DASHBOARD_WEB_DIR: z.string().default('./web/dist'),
+  DASHBOARD_AUTO_BUILD: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((val) => val === 'true'),
+
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly']).default('info'),
   LOG_FILE_PATH: z.string().default('./logs'),
   LOG_MAX_FILES: z.coerce.number().default(30),

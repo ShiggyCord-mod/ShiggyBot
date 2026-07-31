@@ -2,7 +2,6 @@ import { Database, type SQLQueryBindings } from 'bun:sqlite';
 import type {
   UserModel,
   GuildModel,
-  CommandLogModel,
   EconomyModel,
   ReminderModel,
   TagModel,
@@ -58,18 +57,6 @@ export class DatabaseClient {
         createdAt TEXT NOT NULL,
         updatedAt TEXT NOT NULL,
         settings TEXT NOT NULL DEFAULT '{}'
-      );
-
-      CREATE TABLE IF NOT EXISTS command_logs (
-        id TEXT PRIMARY KEY,
-        command TEXT NOT NULL,
-        userId TEXT NOT NULL,
-        guildId TEXT,
-        channelId TEXT NOT NULL,
-        success INTEGER NOT NULL DEFAULT 1,
-        error TEXT,
-        executionTime INTEGER NOT NULL,
-        createdAt TEXT NOT NULL
       );
 
       CREATE TABLE IF NOT EXISTS warns (
@@ -135,7 +122,6 @@ export class DatabaseClient {
 
       CREATE INDEX IF NOT EXISTS idx_users_discordId ON users(discordId);
       CREATE INDEX IF NOT EXISTS idx_guilds_discordId ON guilds(discordId);
-      CREATE INDEX IF NOT EXISTS idx_command_logs_userId ON command_logs(userId);
       CREATE INDEX IF NOT EXISTS idx_warns_userId ON warns(userId);
       CREATE INDEX IF NOT EXISTS idx_economy_userId_guildId ON economy(userId, guildId);
       CREATE INDEX IF NOT EXISTS idx_reminders_userId ON reminders(userId);
@@ -265,35 +251,6 @@ export class DatabaseClient {
       return guild;
     } catch (error) {
       logger.error('Error creating guild', { error: error as Error });
-      throw error;
-    }
-  }
-
-  logCommand(log: Omit<CommandLogModel, 'id'>): CommandLogModel {
-    try {
-      const entry: CommandLogModel = {
-        id: crypto.randomUUID(),
-        ...log,
-      };
-
-      this.db
-        .query(
-          'INSERT INTO command_logs (id, command, userId, guildId, channelId, success, error, executionTime, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        )
-        .run(
-          entry.id,
-          entry.command,
-          entry.userId,
-          entry.guildId || null,
-          entry.channelId,
-          entry.success ? 1 : 0,
-          entry.error || null,
-          entry.executionTime,
-          entry.createdAt.toISOString()
-        );
-      return entry;
-    } catch (error) {
-      logger.error('Error logging command', { error: error as Error });
       throw error;
     }
   }

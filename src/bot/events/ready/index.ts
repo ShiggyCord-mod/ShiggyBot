@@ -7,6 +7,8 @@ import { GuildModelHelper } from '@database/models/guild.js';
 import { getEnvironment } from '@config/environment.js';
 import { PresenceFeature } from '@features/presence';
 import { AutoModerationFeature } from '@features/autoModeration';
+import { DashboardFeature } from '@features/dashboard';
+import type { BotClient } from '@bot/client.js';
 
 const event: Event = {
   name: 'clientReady',
@@ -14,13 +16,12 @@ const event: Event = {
 
   async execute(...args: unknown[]): Promise<void> {
     const client = args[0] as Client<true>;
+    const env = getEnvironment();
 
     logger.info(`Logged in as ${client.user.tag}`, { context: 'Ready' });
     logger.info(`${BOT_INFO.name} v${BOT_INFO.version} is ready!`);
 
     try {
-      const env = getEnvironment();
-
       const presence = new PresenceFeature(client, {
         status: env.PRESENCE_STATUS as PresenceStatusData,
         intervalMs: env.PRESENCE_INTERVAL * 1000,
@@ -36,6 +37,18 @@ const event: Event = {
 
     const autoModeration = new AutoModerationFeature(client);
     autoModeration.start();
+
+    try {
+      const dashboard = new DashboardFeature(client as BotClient, {
+        token: env.DASHBOARD_TOKEN ?? '',
+        hostname: env.DASHBOARD_HOST,
+        port: env.DASHBOARD_PORT,
+        webDir: env.DASHBOARD_WEB_DIR,
+      });
+      dashboard.start();
+    } catch (error) {
+      logger.error('Failed to start dashboard', { context: 'Ready', error: error as Error });
+    }
 
     const guilds = client.guilds.cache;
     logger.info(`Serving ${guilds.size} guilds`);

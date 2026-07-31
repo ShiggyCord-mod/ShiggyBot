@@ -40,18 +40,6 @@ export interface GuildSettings {
   muteRole?: string;
 }
 
-export interface CommandLogModel {
-  id: string;
-  command: string;
-  userId: string;
-  guildId?: string;
-  channelId: string;
-  success: boolean;
-  error?: string;
-  executionTime: number;
-  createdAt: Date;
-}
-
 export interface WarnModel {
   id: string;
   userId: string;
@@ -152,7 +140,6 @@ export interface SongModel {
 export type DatabaseModels = {
   users: UserModel;
   guilds: GuildModel;
-  commandLogs: CommandLogModel;
   warns: WarnModel;
   mutes: MuteModel;
   bans: BanModel;

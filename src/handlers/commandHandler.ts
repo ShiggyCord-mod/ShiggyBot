@@ -14,7 +14,7 @@ export class CommandHandler {
       contextCommands: Collection<string, ContextCommand>;
     }
   ) {
-    this.commandsPath = join(import.meta.dir, '..', '..', 'commands');
+    this.commandsPath = join(import.meta.dir, '..', 'commands');
   }
 
   async loadCommands(): Promise<void> {

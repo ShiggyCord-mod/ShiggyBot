@@ -7,7 +7,7 @@ export class EventHandler {
   private eventsPath: string;
 
   constructor(private client: Client) {
-    this.eventsPath = join(import.meta.dir, '..', 'events');
+    this.eventsPath = join(import.meta.dir, '..', 'bot', 'events');
   }
 
   async loadEvents(): Promise<void> {

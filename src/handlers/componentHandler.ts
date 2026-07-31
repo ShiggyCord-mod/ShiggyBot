@@ -14,7 +14,7 @@ export class ComponentHandler {
       modals: Collection<string, ModalCommand>;
     }
   ) {
-    this.handlersPath = join(import.meta.dir, '..', '..', 'components', 'handlers');
+    this.handlersPath = join(import.meta.dir, '..', 'components', 'handlers');
   }
 
   async loadComponents(): Promise<void> {

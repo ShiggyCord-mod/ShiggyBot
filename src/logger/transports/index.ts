@@ -7,6 +7,18 @@ const { combine, timestamp, printf, colorize } = winston.format;
 
 const MAX_CONTEXT_LEN = 14;
 
+function stringifyExtra(value: unknown): string {
+  const seen = new WeakSet<object>();
+  return JSON.stringify(value, (_key, v: unknown) => {
+    if (v instanceof Error) return v.stack ?? v.message;
+    if (typeof v === 'object' && v !== null) {
+      if (seen.has(v)) return '[circular]';
+      seen.add(v);
+    }
+    return v;
+  });
+}
+
 function createConsoleFormat() {
   return combine(
     colorize(),
@@ -16,7 +28,7 @@ function createConsoleFormat() {
         const ctx = (context as string | undefined) ?? '';
         const paddedCtx =
           ctx.length > 0 ? ctx.padEnd(MAX_CONTEXT_LEN) : ' '.repeat(MAX_CONTEXT_LEN);
-        const extra = Object.keys(rest).length > 1 ? ` ${JSON.stringify(rest)}` : '';
+        const extra = Object.keys(rest).length > 0 ? ` ${stringifyExtra(rest)}` : '';
         return `${ts} ${level.padEnd(5)} ${paddedCtx} ${message}${extra}`;
       }
     )
