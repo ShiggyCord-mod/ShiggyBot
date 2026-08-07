@@ -30,7 +30,7 @@ jobs:
           sudo apt-get install -y libcairo2-dev libpango1.0-dev libjpeg-turbo8-dev libgif-dev librsvg2-dev
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install
 
       - name: Build bot
         run: bun run build
@@ -38,7 +38,7 @@ jobs:
       - name: Build dashboard
         working-directory: web
         run: |
-          bun install --frozen-lockfile
+          bun install
           bun run build
 
       - name: Package (Linux/macOS)
