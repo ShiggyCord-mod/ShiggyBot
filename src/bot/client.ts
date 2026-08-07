@@ -1,7 +1,7 @@
-import { Client, GatewayIntentBits, Partials, Routes, ActivityType } from 'discord.js';
+import { Client, GatewayIntentBits, Partials, Routes, ActivityType, Options } from 'discord.js';
 import { Collection } from '@discordjs/collection';
 import { REST } from '@discordjs/rest';
-import type { Snowflake } from 'discord.js';
+import type { Snowflake, GuildMember, User, Presence, VoiceState } from 'discord.js';
 import { getEnvironment } from '@config/environment.js';
 import { logger } from '@logger/index.js';
 import type {
@@ -28,6 +28,8 @@ export class BotClient extends Client {
   private componentHandler: ComponentHandler;
 
   constructor() {
+    let self: BotClient | null = null;
+
     const clientOptions: any = {
       intents: [
         GatewayIntentBits.Guilds,
@@ -48,9 +50,42 @@ export class BotClient extends Client {
           },
         ],
       },
+      makeCache: Options.cacheWithLimits({
+        MessageManager: 200,
+        ReactionManager: 50,
+        GuildMemberManager: {
+          maxSize: 250,
+          keepOverLimit: (member: GuildMember) => member.id === self?.user?.id,
+        },
+        UserManager: {
+          maxSize: 5000,
+          keepOverLimit: (user: User) => user.id === self?.user?.id,
+        },
+        PresenceManager: 250,
+        VoiceStateManager: 250,
+      }),
+      sweepers: {
+        ...Options.DefaultSweeperSettings,
+        messages: { interval: 300, lifetime: 600 },
+        guildMembers: {
+          interval: 3600,
+          filter: (member: GuildMember) => member.id !== self?.user?.id,
+        },
+        users: { interval: 3600, filter: (user: User) => user.id !== self?.user?.id },
+        presences: {
+          interval: 3600,
+          filter: (presence: Presence) => presence.userId !== self?.user?.id,
+        },
+        voiceStates: {
+          interval: 3600,
+          filter: (voiceState: VoiceState) => voiceState.id !== self?.user?.id,
+        },
+      },
     };
 
     super(clientOptions);
+
+    self = this; // eslint-disable-line @typescript-eslint/no-this-alias
 
     this.commandHandler = new CommandHandler(this);
     this.eventHandler = new EventHandler(this);
