@@ -14,7 +14,9 @@ import {
   TextField,
   Tooltip,
   Typography,
+  useMediaQuery,
 } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import SendIcon from '@mui/icons-material/Send';
@@ -317,6 +319,14 @@ export function ChatView() {
   }
 
   const selectedChannel = channels?.find((channel) => channel.id === channelId);
+  const isMobile = useMediaQuery((theme) => theme.breakpoints.down('md'));
+  const mobilePane: 'guilds' | 'channels' | 'messages' = isMobile
+    ? channelId
+      ? 'messages'
+      : guildId
+        ? 'channels'
+        : 'guilds'
+    : 'guilds';
 
   return (
     <Box
@@ -341,102 +351,147 @@ export function ChatView() {
       )}
 
       <Card sx={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-        <Box
-          sx={{
-            width: 240,
-            borderRight: 1,
-            borderColor: 'divider',
-            display: 'flex',
-            flexDirection: 'column',
-            overflowY: 'auto',
-          }}
-        >
-          {guilds === null ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-              <CircularProgress size={24} />
-            </Box>
-          ) : guilds.length === 0 ? (
-            <Typography variant="body2" color="text.secondary" sx={{ p: 2.5 }}>
-              No guilds to show.
-            </Typography>
-          ) : (
-            <List disablePadding sx={{ p: 1.5 }}>
-              {guilds.map((guild) => (
-                <ListItemButton
-                  key={guild.id}
-                  selected={guild.id === guildId}
-                  onClick={() => setGuildId(guild.id)}
-                  sx={{ borderRadius: 1.5, mb: 0.5, px: 1.5, py: 1 }}
-                >
-                  <ListItemText
-                    primary={guild.name}
-                    secondary={`${formatNumber(guild.memberCount)} members`}
-                    slotProps={{ primary: { noWrap: true }, secondary: { noWrap: true } }}
-                  />
-                </ListItemButton>
-              ))}
-            </List>
-          )}
-        </Box>
-
-        <Box
-          sx={{
-            width: 220,
-            borderRight: 1,
-            borderColor: 'divider',
-            display: 'flex',
-            flexDirection: 'column',
-            overflowY: 'auto',
-          }}
-        >
-          {guildId ? (
-            channels === null ? (
+        {(!isMobile || mobilePane === 'guilds') && (
+          <Box
+            sx={{
+              width: isMobile ? '100%' : 240,
+              flex: isMobile ? '1 1 auto' : '0 0 auto',
+              borderRight: 1,
+              borderColor: 'divider',
+              display: 'flex',
+              flexDirection: 'column',
+              overflowY: 'auto',
+            }}
+          >
+            {guilds === null ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
                 <CircularProgress size={24} />
               </Box>
-            ) : channels.length === 0 ? (
+            ) : guilds.length === 0 ? (
               <Typography variant="body2" color="text.secondary" sx={{ p: 2.5 }}>
-                No channels to show.
+                No guilds to show.
               </Typography>
             ) : (
               <List disablePadding sx={{ p: 1.5 }}>
-                {channels.map((channel) => (
+                {guilds.map((guild) => (
                   <ListItemButton
-                    key={channel.id}
-                    selected={channel.id === channelId}
-                    onClick={() => setChannelId(channel.id)}
+                    key={guild.id}
+                    selected={guild.id === guildId}
+                    onClick={() => setGuildId(guild.id)}
                     sx={{ borderRadius: 1.5, mb: 0.5, px: 1.5, py: 1 }}
                   >
                     <ListItemText
-                      primary={`# ${channel.name}`}
-                      secondary={channel.topic ?? undefined}
+                      primary={guild.name}
+                      secondary={`${formatNumber(guild.memberCount)} members`}
                       slotProps={{ primary: { noWrap: true }, secondary: { noWrap: true } }}
                     />
                   </ListItemButton>
                 ))}
               </List>
-            )
-          ) : (
-            <Typography variant="body2" color="text.secondary" sx={{ p: 2.5 }}>
-              Select a guild
-            </Typography>
-          )}
-        </Box>
+            )}
+          </Box>
+        )}
 
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        {(!isMobile || mobilePane === 'channels') && (
           <Box
             sx={{
-              px: 2.5,
-              py: 1.5,
-              borderBottom: 1,
+              width: isMobile ? '100%' : 220,
+              flex: isMobile ? '1 1 auto' : '0 0 auto',
+              borderRight: 1,
               borderColor: 'divider',
-              bgcolor: 'surfaceContainerLow',
+              display: 'flex',
+              flexDirection: 'column',
+              overflowY: 'auto',
             }}
           >
-            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-              {selectedChannel ? `# ${selectedChannel.name}` : 'No channel selected'}
-            </Typography>
+            {isMobile && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  px: 1,
+                  py: 0.75,
+                  borderBottom: 1,
+                  borderColor: 'divider',
+                }}
+              >
+                <IconButton
+                  size="small"
+                  onClick={() => setGuildId(null)}
+                  aria-label="Back to servers"
+                >
+                  <ArrowBackIcon />
+                </IconButton>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, minWidth: 0 }} noWrap>
+                  {guilds?.find((g) => g.id === guildId)?.name ?? 'Channels'}
+                </Typography>
+              </Box>
+            )}
+            {guildId ? (
+              channels === null ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+                  <CircularProgress size={24} />
+                </Box>
+              ) : channels.length === 0 ? (
+                <Typography variant="body2" color="text.secondary" sx={{ p: 2.5 }}>
+                  No channels to show.
+                </Typography>
+              ) : (
+                <List disablePadding sx={{ p: 1.5 }}>
+                  {channels.map((channel) => (
+                    <ListItemButton
+                      key={channel.id}
+                      selected={channel.id === channelId}
+                      onClick={() => setChannelId(channel.id)}
+                      sx={{ borderRadius: 1.5, mb: 0.5, px: 1.5, py: 1 }}
+                    >
+                      <ListItemText
+                        primary={`# ${channel.name}`}
+                        secondary={channel.topic ?? undefined}
+                        slotProps={{ primary: { noWrap: true }, secondary: { noWrap: true } }}
+                      />
+                    </ListItemButton>
+                  ))}
+                </List>
+              )
+            ) : (
+              <Typography variant="body2" color="text.secondary" sx={{ p: 2.5 }}>
+                Select a guild
+              </Typography>
+            )}
           </Box>
+        )}
+
+        {(!isMobile || mobilePane === 'messages') && (
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                px: 2.5,
+                py: 1.5,
+                borderBottom: 1,
+                borderColor: 'divider',
+                bgcolor: 'surfaceContainerLow',
+                minWidth: 0,
+              }}
+            >
+              {isMobile && (
+                <IconButton
+                  size="small"
+                  onClick={() => setChannelId(null)}
+                  aria-label="Back to channels"
+                  sx={{ ml: -1.5 }}
+                >
+                  <ArrowBackIcon />
+                </IconButton>
+              )}
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, minWidth: 0 }} noWrap>
+                {selectedChannel ? `# ${selectedChannel.name}` : 'No channel selected'}
+              </Typography>
+            </Box>
 
           <Box ref={scrollRef} sx={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
             {channelId && messages.length > 0 && (
@@ -522,7 +577,8 @@ export function ChatView() {
               </span>
             </Tooltip>
           </Paper>
-        </Box>
+          </Box>
+        )}
       </Card>
     </Box>
   );

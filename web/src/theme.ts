@@ -125,9 +125,9 @@ export const theme = createTheme({
           borderRadius: 12,
           transition: `background-color 200ms ${EASE_OUT}, color 200ms ${EASE_OUT}`,
           '&.Mui-selected': {
-            backgroundColor: 'primaryContainer',
-            color: 'onPrimaryContainer',
-            '&:hover': { backgroundColor: 'primaryContainer' },
+            backgroundColor: 'surfaceContainer',
+            color: 'text.primary',
+            '&:hover': { backgroundColor: 'surfaceContainer' },
           },
         },
       },

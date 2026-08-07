@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   AppBar,
+  Avatar,
   Box,
   Divider,
   Drawer,
@@ -19,6 +20,7 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import ForumIcon from '@mui/icons-material/Forum';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
+import { api } from '../api';
 import type { View } from '../App';
 
 const NAV_ITEMS: Array<{ key: View; label: string; icon: ReactNode }> = [
@@ -38,6 +40,22 @@ interface ShellProps {
 
 export function Shell({ view, onNavigate, onLogout, children }: ShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [botAvatar, setBotAvatar] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .status()
+      .then((s) => {
+        if (!cancelled && s.user?.avatarUrl) setBotAvatar(s.user.avatarUrl);
+      })
+      .catch(() => {
+        // keep the letter fallback
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const nav = (key: View) => {
     onNavigate(key);
@@ -46,6 +64,7 @@ export function Shell({ view, onNavigate, onLogout, children }: ShellProps) {
 
   const content = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <Toolbar />
       <List sx={{ p: 1.5, flex: 1 }}>
         {NAV_ITEMS.map((item) => (
           <ListItemButton
@@ -57,7 +76,7 @@ export function Shell({ view, onNavigate, onLogout, children }: ShellProps) {
             <ListItemIcon
               sx={{
                 minWidth: 40,
-                color: view === item.key ? 'onPrimaryContainer' : 'text.secondary',
+                color: view === item.key ? 'text.primary' : 'text.secondary',
               }}
             >
               {item.icon}
@@ -101,22 +120,21 @@ export function Shell({ view, onNavigate, onLogout, children }: ShellProps) {
             <MenuIcon />
           </IconButton>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Box
+            <Avatar
+              src={botAvatar ?? undefined}
+              alt="ShiggyBot"
               sx={{
                 width: 36,
                 height: 36,
-                borderRadius: 2.5,
-                display: 'grid',
-                placeItems: 'center',
+                fontSize: 16,
+                fontWeight: 800,
                 bgcolor: 'primaryContainer',
                 color: 'onPrimaryContainer',
-                fontWeight: 800,
-                fontSize: 16,
                 flexShrink: 0,
               }}
             >
               S
-            </Box>
+            </Avatar>
             <Typography variant="h6">ShiggyBot</Typography>
           </Box>
           <Box sx={{ flex: 1 }} />
@@ -134,7 +152,14 @@ export function Shell({ view, onNavigate, onLogout, children }: ShellProps) {
           open={mobileOpen}
           onClose={() => setMobileOpen(false)}
           ModalProps={{ keepMounted: true }}
-          sx={{ display: { xs: 'block', md: 'none' }, '& .MuiDrawer-paper': { width: DRAWER_WIDTH } }}
+          sx={{
+            display: { xs: 'block', md: 'none' },
+            '& .MuiDrawer-paper': {
+              width: DRAWER_WIDTH,
+              bgcolor: 'background.default',
+              backgroundImage: 'none',
+            },
+          }}
         >
           {content}
         </Drawer>
@@ -148,6 +173,8 @@ export function Shell({ view, onNavigate, onLogout, children }: ShellProps) {
               boxSizing: 'border-box',
               borderRight: 1,
               borderColor: 'divider',
+              bgcolor: 'background.default',
+              backgroundImage: 'none',
             },
           }}
         >
