@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "bun run scripts/dev.ts",
     "dev:watch": "BOT_DEBUG=true LOG_LEVEL=debug bun run --watch src/index.ts",
-    "start": "bun run dist/index.js",
+    "start": "bun run scripts/start.ts",
     "build": "bun run scripts/build.ts",
     "build:all": "bun run build && bun run web:build",
     "clean": "rm -rf dist data/*.db logs",
