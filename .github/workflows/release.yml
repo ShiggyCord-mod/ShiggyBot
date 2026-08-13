@@ -8,46 +8,72 @@ permissions:
   contents: write
 
 jobs:
-  publish:
-    name: ${{ matrix.rid }}
-    runs-on: ubuntu-latest
+  build:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        rid: [win-x64, linux-x64, osx-x64]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-dotnet@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          dotnet-version: 10.0.x
+          bun-version: 1.3.x
 
-      - name: Publish
+      - name: Install native build dependencies (Linux)
+        if: runner.os == 'Linux'
         run: |
-          dotnet publish -c Release \
-            --self-contained true \
-            -p:PublishSingleFile=true \
-            -p:UseAppHost=true \
-            -r ${{ matrix.rid }} \
-            -o publish
+          sudo apt-get update
+          sudo apt-get install -y libcairo2-dev libpango1.0-dev libjpeg-turbo8-dev libgif-dev librsvg2-dev
 
-      - name: Bundle
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build bot
+        run: bun run build
+
+      - name: Build dashboard
+        working-directory: web
         run: |
-          mkdir -p bundle
-          cp publish/ShiggyBot* bundle/
+          bun install
+          bun run build
+
+      - name: Package (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p bundle/web
+          cp -r dist bundle/dist
+          cp -r web/dist bundle/web/dist
+          cp -r node_modules bundle/node_modules
           cp config.example.txt bundle/
+          printf '#!/bin/sh\ncd "$(dirname "$0")"\nbun run dist/index.js\n' > bundle/start.sh
+          chmod +x bundle/start.sh
           cd bundle
-          zip -r ../ShiggyBot-${{ matrix.rid }}.zip .
+          zip -r ../ShiggyBot-${{ matrix.os }}.zip .
 
-      - name: Upload
-        uses: actions/upload-artifact@v4
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          mkdir -p bundle/web
+          cp -r dist bundle/dist
+          cp -r web/dist bundle/web/dist
+          cp -r node_modules bundle/node_modules
+          cp config.example.txt bundle/
+          printf '@echo off\r\ncd /d "%%~dp0"\r\nbun run dist/index.js\r\n' > bundle/start.bat
+          cd bundle
+          zip -r ../ShiggyBot-windows.zip .
+
+      - uses: actions/upload-artifact@v4
         with:
-          name: ShiggyBot-${{ matrix.rid }}
-          path: ShiggyBot-${{ matrix.rid }}.zip
+          name: ShiggyBot-${{ matrix.os }}
+          path: ShiggyBot-*.zip
 
   release:
-    needs: publish
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -58,8 +84,7 @@ jobs:
           merge-multiple: true
 
       - name: Read version
-        run: |
-          echo "VERSION=$(cat VERSION)" >> $GITHUB_ENV
+        run: echo "VERSION=$(cat VERSION)" >> $GITHUB_ENV
 
       - uses: softprops/action-gh-release@v2
         with:
@@ -67,16 +92,11 @@ jobs:
           body: |
             **ShiggyBot v${{ env.VERSION }}**
 
-            Self-contained Discord bot built with .NET 10 and Discord.Net 3.20.1.
-
+            Discord bot built with Bun and TypeScript, Discord.js 14, and React/MUI.
 
             ## ⚙️ Configuration
 
-            Config is loaded from these sources (later overrides earlier):
-              1. `appsettings.json` (optional, next to the executable)
-              2. Environment variables
-              3. `config.txt` (optional, INI-style `KEY=VALUE`, `#` comments)
-
+            Config is loaded from environment variables or a `.env` file.
             A `config.example.txt` is included in the archive. Rename it to `config.txt`
             and edit with your values.
 
@@ -85,39 +105,40 @@ jobs:
             | Key | Description |
             |-----|-------------|
             | `DISCORD_TOKEN` | Your bot token from the [Discord Developer Portal](https://discord.com/developers/applications) |
+            | `DISCORD_CLIENT_ID` | Your bot's application client ID |
 
             ### Optional
 
             | Key | Default | Description |
             |-----|---------|-------------|
-            | `PREFIX` | `S` | Command prefix |
-            | `WELCOME_ROLE_ID` | — | Role ID assigned to new members on join |
-            | `PRESENCE_STATUS` | `online` | Bot status (`online`, `idle`, `dnd`, `invisible`) |
-            | `PRESENCE_INTERVAL` | `300` | Presence rotation interval in seconds |
-            | `LOG_WEBHOOK_URL` | — | Discord webhook URL for error logging |
-            | `HF_TOKEN` | — | Hugging Face API token for AI commands (`Sai`) |
+            | `BOT_PREFIX` | `!` | Command prefix |
+            | `BOT_ENV` | `development` | `development`, `production`, or `test` |
+            | `PRESENCE_STATUS` | `idle` | Bot status (`online`, `idle`, `dnd`, `invisible`) |
+            | `PRESENCE_INTERVAL` | `5` | Presence rotation interval in seconds |
+            | `GITHUB_REPO` | `kmmiio99o/ShiggyCord` | GitHub repo for commit/PR/star monitoring (`owner/repo`) |
             | `GITHUB_TOKEN` | — | GitHub personal access token (higher API rate limits) |
-            | `GITHUB_REPO` | — | GitHub repo for commit/PR/star monitoring (`owner/repo`) |
-            | `GITHUB_WEBHOOK_CHANNEL_ID` | — | Discord channel ID for GitHub notifications |
-            | `DEV_GUILD_ID` | — | Guild ID for development commands |
-
+            | `DATABASE_PATH` | `./data/database.db` | SQLite database file location |
+            | `DASHBOARD_TOKEN` | — | Token for the web dashboard; leaves it disabled when unset |
+            | `DASHBOARD_PORT` | `3000` | Port the dashboard web server listens on |
+            | `DASHBOARD_WEB_DIR` | `./web/dist` | Directory with the pre-built dashboard frontend |
+            | `DASHBOARD_AUTO_BUILD` | `false` | Set to `true` to auto-build `web/` on startup when the dashboard UI is missing |
+            | `LOG_LEVEL` | `info` | Logging verbosity |
+            | `IMAGE_QUALITY` | `80` | Image processing quality (1–100) |
+            | `IMAGE_MAX_SIZE` | `5000000` | Max image byte size for image commands |
 
             ## 📦 What's included
 
-            - **Single-file executable** — self-contained, no .NET runtime needed
-            - **SQLite database** (`shiggybot.db`) — created automatically on first run for timed bans,
-              disabled commands, and guild config
+            - **Bundled bot** (`dist/`) — minified Bun bundle of the full bot
+            - **Dashboard frontend** (`web/dist`) — pre-built React/MUI web app, served by the bot at `DASHBOARD_PORT`
+            - **Dependencies** (`node_modules/`) — native modules (canvas, sharp) included per platform
             - **`config.example.txt`** — template configuration file
-
+            - **`start.sh` / `start.bat`** — launch scripts
 
             ## 🔧 System requirements
 
-            - **Windows x64**, **Linux x64**, or **macOS x64**
-            - No .NET runtime required (self-contained)
-            - Network access to `discord.com` and `api.github.com`
-
-
-            ## 🆕 What's new in v${{ env.VERSION }}
+            - **Windows**, **Linux**, or **macOS**
+            - [Bun](https://bun.sh) runtime ≥ 1.3
+            - Linux only: system libraries for canvas (`libcairo2`, `libpango-1.0-0`, `libjpeg-turbo8`, `libgif7`, `librsvg2-2`)
 
           files: ShiggyBot-*.zip
           generate_release_notes: true

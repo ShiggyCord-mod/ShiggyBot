@@ -14,3 +14,8 @@ LOG_WEBHOOK_URL=
 # GitHub repo monitoring (commits, PRs, stars)
 GITHUB_REPO=kmmiio99o/ShiggyCord
 GITHUB_WEBHOOK_CHANNEL_ID=
+
+# Dashboard (React web app + management API). Leave DASHBOARD_TOKEN empty to disable.
+DASHBOARD_TOKEN=
+DASHBOARD_PORT=3000
+DASHBOARD_WEB_DIR=./web/dist

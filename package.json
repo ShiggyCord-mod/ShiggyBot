@@ -1,0 +1,63 @@
+{
+  "name": "ShiggyBot",
+  "version": "2.0.0",
+  "description": "Discord bot with TypeScript, React ComponentsV2, and Bun",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run scripts/dev.ts",
+    "dev:watch": "BOT_DEBUG=true LOG_LEVEL=debug bun run --watch src/index.ts",
+    "start": "bun run dist/index.js",
+    "build": "bun run scripts/build.ts",
+    "build:all": "bun run build && bun run web:build",
+    "clean": "rm -rf dist data/*.db logs",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "format": "prettier --write 'src/**/*.ts'",
+    "format:check": "prettier --check 'src/**/*.ts'",
+    "typecheck": "bunx tsc --noEmit",
+    "test": "bun test",
+    "test:unit": "bun test tests/unit",
+    "test:integration": "bun test tests/integration",
+    "validate": "bun run typecheck && bun run lint && bun run format:check",
+    "web:install": "bun install --cwd web",
+    "web:dev": "bun run --cwd web dev",
+    "web:build": "bun run --cwd web build",
+    "web:typecheck": "bun run --cwd web typecheck",
+    "web:preview": "bun run --cwd web preview",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "@discordjs/collection": "^2.1.1",
+    "@discordjs/rest": "^2.6.3",
+    "discord-api-types": "^0.38.51",
+    "discord.js": "^14.27.0",
+    "dotenv": "^17.4.2",
+    "react": "^19.2.8",
+    "sharp": "^0.35.3",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "@types/eslint-plugin-security": "^3.0.1",
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.2.18",
+    "@typescript-eslint/eslint-plugin": "^8.65.0",
+    "@typescript-eslint/parser": "^8.65.0",
+    "eslint": "^10.8.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.6",
+    "eslint-plugin-security": "^4.0.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.2.0",
+    "prettier": "^3.9.6",
+    "typescript": "~5.7.0"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  }
+}
