@@ -493,23 +493,20 @@ export class DatabaseClient {
     bannedBy: string,
     reason?: string
   ): void {
-    try {
-      this.db
-        .query(
-          'INSERT OR IGNORE INTO timed_bans (id, guildId, userId, unbanAt, bannedBy, reason, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)'
-        )
-        .run(
-          crypto.randomUUID(),
-          guildId,
-          userId,
-          unbanAt.toISOString(),
-          bannedBy,
-          reason ?? null,
-          new Date().toISOString()
-        );
-    } catch (error) {
-      logger.error('Error creating timed ban', { error: error as Error });
-    }
+    // Let errors propagate so callers can react (do not silently swallow failures)
+    this.db
+      .query(
+        'INSERT OR IGNORE INTO timed_bans (id, guildId, userId, unbanAt, bannedBy, reason, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      )
+      .run(
+        crypto.randomUUID(),
+        guildId,
+        userId,
+        unbanAt.toISOString(),
+        bannedBy,
+        reason ?? null,
+        new Date().toISOString()
+      );
   }
 
   getExpiredBans(): Array<{ id: string; guildId: string; userId: string }> {
