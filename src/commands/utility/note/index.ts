@@ -8,21 +8,13 @@ import {
   SeparatorSpacingSize,
 } from 'discord.js';
 
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import notesJson from './notes.json';
 
 type Note = { title: string; description: string };
 
-const NOTES: Record<string, Note> = (() => {
-  try {
-    const raw = readFileSync(join(__dirname, 'notes.json'), 'utf8'); // eslint-disable-line security/detect-non-literal-fs-filename
-    return Object.fromEntries(
-      Object.entries(JSON.parse(raw) as Record<string, Note>).map(([k, v]) => [k.toLowerCase(), v])
-    );
-  } catch {
-    return {};
-  }
-})();
+const NOTES: Record<string, Note> = Object.fromEntries(
+  Object.entries(notesJson as Record<string, Note>).map(([k, v]) => [k.toLowerCase(), v])
+);
 
 const command: PrefixCommand = {
   name: 'note',

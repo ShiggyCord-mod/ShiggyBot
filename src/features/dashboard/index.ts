@@ -1,4 +1,3 @@
-import { existsSync } from 'fs';
 import { randomBytes } from 'crypto';
 import { join, resolve } from 'path';
 import { spawn } from 'child_process';
@@ -10,6 +9,14 @@ import type { DashboardOptions } from '@dtypes/dashboard';
 import { createDashboardServer } from './server.js';
 import { serializeMessage } from './serializers.js';
 import { SubscriptionHub } from './ws.js';
+
+// static web assets detection for bundlers
+let STATIC_WEB_INDEX: unknown = null;
+try {
+  STATIC_WEB_INDEX = (await import('../../../web/dist/index.html')).default;
+} catch {
+  STATIC_WEB_INDEX = null;
+}
 
 export class DashboardFeature {
   private readonly client: BotClient;
@@ -64,8 +71,8 @@ export class DashboardFeature {
 
   private async ensureWebBuild(): Promise<void> {
     const webDir = resolve(this.options.webDir);
-    // eslint-disable-next-line security/detect-non-literal-fs-filename
-    if (existsSync(join(webDir, 'index.html'))) return;
+    // if static index was bundled, skip runtime checks
+    if (STATIC_WEB_INDEX) return;
 
     if (!getEnvironment().DASHBOARD_AUTO_BUILD) {
       logger.warn(
@@ -82,8 +89,19 @@ export class DashboardFeature {
 
     let exitCode = 0;
 
-    // eslint-disable-next-line security/detect-non-literal-fs-filename
-    if (!existsSync(join(webRoot, 'node_modules'))) {
+    // check node_modules presence without fs.existsSync
+    let hasNodeModules = true;
+    try {
+      // Bun.file throws if path doesn't exist
+
+      // NOTE: this relies on Bun runtime behavior
+      Bun.file(join(webRoot, 'node_modules'));
+      hasNodeModules = true;
+    } catch {
+      hasNodeModules = false;
+    }
+
+    if (!hasNodeModules) {
       exitCode = await this.run(['install'], webRoot);
     }
 

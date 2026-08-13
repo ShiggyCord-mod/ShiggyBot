@@ -1,8 +1,9 @@
 import { Collection } from '@discordjs/collection';
 import type { ButtonCommand, SelectCommand, ModalCommand } from '@dtypes/bot';
 import { logger } from '@logger/index.js';
-import { readdirSync, statSync } from 'fs';
 import { join } from 'path';
+
+import componentsList from '../components/handlers/index.js';
 
 export class ComponentHandler {
   private handlersPath: string;
@@ -26,36 +27,41 @@ export class ComponentHandler {
 
   async loadComponents(): Promise<void> {
     try {
-      const files = this.findFiles(this.handlersPath);
+      try {
+        const list: any[] = (componentsList as any) || [];
 
-      for (const filePath of files) {
-        try {
-          const componentModule = await import(filePath);
-          const component = componentModule.default || componentModule;
+        for (const component of list) {
+          try {
+            if (!('id' in component && 'execute' in component)) {
+              logger.warn('Component is missing required properties');
+              continue;
+            }
 
-          if (!('id' in component && 'execute' in component)) {
-            logger.warn(`Component at ${filePath} is missing required properties`);
-            continue;
+            // infer type by checking exported metadata or id prefixes
+            if (component.type === 'modal') {
+              this.client.modals.set(component.id, component as ModalCommand);
+              logger.debug(`Loaded modal component: ${component.id}`);
+            } else if (component.type === 'select' || component.id?.includes('select')) {
+              this.client.selects.set(component.id, component as SelectCommand);
+              logger.debug(`Loaded select component: ${component.id}`);
+            } else {
+              this.client.buttons.set(component.id, component as ButtonCommand);
+              logger.debug(`Loaded button component: ${component.id}`);
+            }
+          } catch (error) {
+            logger.error('Error loading component', { error: error as Error });
           }
-
-          const parentDir = filePath.split('/').at(-2);
-
-          if (parentDir === 'modal') {
-            this.client.modals.set(component.id, component as ModalCommand);
-            logger.debug(`Loaded modal component: ${component.id}`);
-          } else if (parentDir === 'select') {
-            this.client.selects.set(component.id, component as SelectCommand);
-            logger.debug(`Loaded select component: ${component.id}`);
-          } else if (parentDir === 'button') {
-            this.client.buttons.set(component.id, component as ButtonCommand);
-            logger.debug(`Loaded button component: ${component.id}`);
-          } else {
-            logger.warn(`Unknown component type for ${filePath}, skipping`);
-          }
-        } catch (error) {
-          logger.error(`Error loading component at ${filePath}`, { error: error as Error });
         }
+
+        logger.info(
+          `Loaded ${this.client.buttons.size} buttons, ${this.client.selects.size} selects, and ${this.client.modals.size} modals`
+        );
+        return;
+      } catch {
+        // fallback to filesystem discovery
       }
+
+      // filesystem discovery removed; using static components list for bundling
 
       logger.info(
         `Loaded ${this.client.buttons.size} buttons, ${this.client.selects.size} selects, and ${this.client.modals.size} modals`
@@ -65,21 +71,8 @@ export class ComponentHandler {
     }
   }
 
-  private findFiles(dir: string): string[] {
-    const results: string[] = [];
-    const entries = readdirSync(dir);
-
-    for (const entry of entries) {
-      const fullPath = join(dir, entry);
-      const stat = statSync(fullPath);
-
-      if (stat.isDirectory()) {
-        results.push(...this.findFiles(fullPath));
-      } else if (entry.endsWith('.ts') || entry.endsWith('.js')) {
-        results.push(fullPath);
-      }
-    }
-
-    return results;
+  // filesystem discovery removed; no-op
+  private findFiles(_: string): string[] {
+    return [];
   }
 }

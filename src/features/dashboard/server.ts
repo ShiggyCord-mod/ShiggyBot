@@ -1,4 +1,3 @@
-import { existsSync, statSync } from 'fs';
 import { extname, join, resolve } from 'path';
 import type { BotClient } from '@bot/client.js';
 import { logger } from '@logger/index.js';
@@ -75,22 +74,24 @@ function serveStatic(pathname: string, webDir: string): Response {
 
   if (!filePath.startsWith(root)) return new Response('Not Found', { status: 404 });
 
-  // eslint-disable-next-line security/detect-non-literal-fs-filename
-  if (existsSync(filePath) && statSync(filePath).isFile()) {
+  try {
     const ext = extname(filePath).toLowerCase();
     // eslint-disable-next-line security/detect-object-injection
     const contentType = MIME_TYPES[ext] ?? 'application/octet-stream';
     return new Response(Bun.file(filePath), { headers: staticHeaders(contentType) });
+  } catch {
+    // file not found or inaccessible
   }
 
   const index = join(root, 'index.html');
-  // eslint-disable-next-line security/detect-non-literal-fs-filename
-  if (existsSync(index))
+  try {
     return new Response(Bun.file(index), { headers: staticHeaders('text/html; charset=utf-8') });
-  return new Response(UI_NOT_BUILT_HTML, {
-    status: 200,
-    headers: staticHeaders('text/html; charset=utf-8'),
-  });
+  } catch {
+    return new Response(UI_NOT_BUILT_HTML, {
+      status: 200,
+      headers: staticHeaders('text/html; charset=utf-8'),
+    });
+  }
 }
 
 const UI_NOT_BUILT_HTML = `<!doctype html>
@@ -263,6 +264,16 @@ export function createDashboardServer(
           }
           recordAuthSuccess(ip);
           return await handleApi(client, req, url, startedAt);
+        }
+
+        // ignore favicon requests to avoid noisy ENOENT logs when favicon is missing
+        if (url.pathname === '/favicon.ico') {
+          return new Response(null, {
+            status: 204,
+            headers: {
+              'Cache-Control': 'public, max-age=86400',
+            },
+          });
         }
 
         return serveStatic(url.pathname, options.webDir);

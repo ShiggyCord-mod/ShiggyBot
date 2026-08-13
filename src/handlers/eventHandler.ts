@@ -1,7 +1,8 @@
 import type { Client } from 'discord.js';
 import { logger } from '@logger/index.js';
-import { readdirSync } from 'fs';
 import { join } from 'path';
+
+import eventsList from '../bot/events/index.js';
 
 export class EventHandler {
   private eventsPath: string;
@@ -19,20 +20,11 @@ export class EventHandler {
 
   async loadEvents(): Promise<void> {
     try {
-      const eventFolders = readdirSync(this.eventsPath);
+      try {
+        const list: any[] = (eventsList as any) || [];
 
-      for (const folder of eventFolders) {
-        const folderPath = join(this.eventsPath, folder);
-        const eventFiles = readdirSync(folderPath).filter(
-          (file) => file.endsWith('.ts') || file.endsWith('.js')
-        );
-
-        for (const file of eventFiles) {
-          const filePath = join(folderPath, file);
+        for (const event of list) {
           try {
-            const eventModule = await import(filePath);
-            const event = eventModule.default || eventModule;
-
             if (event.name && event.execute) {
               if (event.once) {
                 this.client.once(event.name, (...args) => event.execute(...args));
@@ -41,13 +33,20 @@ export class EventHandler {
               }
               logger.debug(`Loaded event: ${event.name}`);
             } else {
-              logger.warn(`Event at ${filePath} is missing required properties`);
+              logger.warn('Event is missing required properties');
             }
           } catch (error) {
-            logger.error(`Error loading event at ${filePath}`, { error: error as Error });
+            logger.error('Error loading event', { error: error as Error });
           }
         }
+
+        logger.info('Events loaded successfully');
+        return;
+      } catch {
+        // fallback to filesystem discovery
       }
+
+      // filesystem discovery removed; using static events list for bundling
 
       logger.info('Events loaded successfully');
     } catch (error) {

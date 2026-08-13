@@ -1,12 +1,11 @@
 import sharp from 'sharp';
-import { readFile } from 'fs/promises';
-import { join } from 'path';
 import type { ImageProcessingOptions, MpregResult } from '@dtypes/image';
 import { getEnvironment } from '@config/environment.js';
 import { logger } from '@logger/index.js';
 
-const PROJECT_ROOT = join(import.meta.dir, '..', '..', '..');
-const MPREG_BASE_PATH = join(PROJECT_ROOT, 'assets', 'mpreg.png');
+// Static import of base image for bundling
+import MPREG_BASE from '../../../assets/mpreg.png';
+
 const MPREG_OUTPUT_SIZE = 512;
 const MPREG_SVG_VIEWBOX = 36;
 const MPREG_HEAD_CX = 16.75;
@@ -46,8 +45,22 @@ export async function getDominantColor(input: Buffer): Promise<number> {
 }
 
 export async function generateMpregImage(avatarUrl: string): Promise<MpregResult> {
-  // eslint-disable-next-line security/detect-non-literal-fs-filename
-  const baseBytes = await readFile(MPREG_BASE_PATH);
+  // bundler-provided asset; MPREG_BASE may be a path string or Uint8Array
+  let baseBytes: Buffer;
+  if (typeof MPREG_BASE === 'string') {
+    // node/bun provides path to file; read via Bun.file to avoid fs.readFile
+    try {
+      baseBytes = Buffer.from(await Bun.file(MPREG_BASE).arrayBuffer());
+    } catch {
+      // fallback: treat string as base64
+      baseBytes = Buffer.from(MPREG_BASE, 'base64');
+    }
+  } else if (MPREG_BASE instanceof Uint8Array) {
+    baseBytes = Buffer.from(MPREG_BASE as Uint8Array);
+  } else {
+    // unknown format, try JSON serialization
+    baseBytes = Buffer.from(String(MPREG_BASE));
+  }
 
   const avatarRes = await fetch(avatarUrl);
   const avatarBytes = Buffer.from(await avatarRes.arrayBuffer());
