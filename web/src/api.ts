@@ -25,13 +25,19 @@ export class ApiError extends Error {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getToken();
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...((init?.headers as Record<string, string>) || {}),
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const res = await fetch(path, {
     ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...init?.headers,
-    },
+    headers,
   });
 
   if (res.status === 401) throw new ApiError(401, 'Unauthorized');
@@ -75,5 +81,9 @@ export const api = {
 export function connectSocket(): WebSocket {
   const token = getToken();
   const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  return new WebSocket(`${protocol}://${location.host}/ws`, token ? [token] : []);
+  const url = token
+    ? `${protocol}://${location.host}/ws?token=${encodeURIComponent(token)}`
+    : `${protocol}://${location.host}/ws`;
+
+  return new WebSocket(url);
 }

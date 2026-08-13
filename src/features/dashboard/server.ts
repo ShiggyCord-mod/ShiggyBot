@@ -138,16 +138,6 @@ function recordAuthSuccess(ip: string): void {
   authFailures.delete(ip);
 }
 
-function isTrustedOrigin(origin: string | null): boolean {
-  if (!origin) return true;
-  try {
-    const hostname = new URL(origin).hostname;
-    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
-  } catch {
-    return false;
-  }
-}
-
 async function handleApi(
   client: BotClient,
   req: Request,
@@ -230,8 +220,19 @@ export function createDashboardServer(
       const url = new URL(req.url);
       const ip = server.requestIP(req)?.address ?? 'unknown';
 
-      if (!isTrustedOrigin(req.headers.get('Origin'))) {
-        return jsonResponse({ error: 'Forbidden' }, 403);
+      // Trust requests from same origin or localhost. Some browsers set Origin for same-origin
+      const originHeader = req.headers.get('Origin');
+      if (originHeader) {
+        try {
+          const originHost = new URL(originHeader).hostname;
+          const reqHost = (req.headers.get('host') ?? '').split(':')[0];
+          const trustedHosts = new Set(['localhost', '127.0.0.1', '[::1]']);
+          if (!(trustedHosts.has(originHost) || originHost === reqHost)) {
+            return jsonResponse({ error: 'Forbidden' }, 403);
+          }
+        } catch {
+          return jsonResponse({ error: 'Forbidden' }, 403);
+        }
       }
 
       try {
@@ -240,15 +241,27 @@ export function createDashboardServer(
             return jsonResponse({ error: 'Too many requests' }, 429);
           }
           const protocol = req.headers.get('sec-websocket-protocol');
-          const token = protocol ? protocol.split(',')[0].trim() : null;
+          const headerToken = protocol ? protocol.split(',')[0].trim() : null;
+          const altHeader =
+            req.headers.get('X-Dashboard-Token') || req.headers.get('x-dashboard-token') || null;
+          const queryToken = url.searchParams.get('token');
+
+          const token = headerToken ?? altHeader ?? queryToken ?? null;
+
           if (!isAuthorized(token, options.token)) {
             recordAuthFailure(ip);
             return new Response('Unauthorized', { status: 401 });
           }
           recordAuthSuccess(ip);
+
+          // reply with same subprotocol if present (not required)
+          const responseHeaders = headerToken
+            ? { 'Sec-WebSocket-Protocol': headerToken }
+            : undefined;
+
           const upgraded = server.upgrade(req, {
             data: { channelIds: new Set<string>() },
-            headers: token ? { 'Sec-WebSocket-Protocol': token } : undefined,
+            headers: responseHeaders,
           });
           return upgraded ? undefined : new Response('Upgrade failed', { status: 400 });
         }
