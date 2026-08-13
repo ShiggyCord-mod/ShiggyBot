@@ -8,19 +8,21 @@ import {
   SeparatorSpacingSize,
 } from 'discord.js';
 
-const NOTES: Record<string, string> = {
-  vc: 'No one can hear me\n\nDisable Advanced Voice Activity in Voice settings of Discord, and reload the app.',
-  install:
-    'Installation links\n\nShiggyCord: https://github.com/kmmiio99o/ShiggyCord\nShiggyManager: https://github.com/kmmiio99o/ShiggyManager\nShiggyXposed: https://github.com/kmmiio99o/ShiggyXposed',
-  background:
-    "Background in themes not showing\n\nDue to a recent Discord change, the themes chat background is currently broken for some users. The devs want to fix it but haven't been able to recreate the problem themselves yet.",
-  ios: 'iOS Support\n\nDoes ShiggyCord support iOS? No, but you can run it as a custom bundle by KettuTweak.',
-  passkeys:
-    "Passkeys not working\n\nDue to the way ShiggyCord modifies the Discord app, it breaks the functionality of passkeys. To use passkeys, you must instead use ShiggyXposed, which doesn't alter the original app. Please note that ShiggyXposed requires a rooted device.",
-  ftf: "Failed to fetch\n\nShiggyCord tried to fetch bundle but couldn't. Try using vpn and see if it works. But if Shiggy still load successfully, ignore it.",
-  stuck:
-    'ShiggyCord stuck on loading discord screen\n\nDisable bundle injection in Xposed Recovery Menu (shake your phone). If it fixes the issue, enable it again.',
-};
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+type Note = { title: string; description: string };
+
+const NOTES: Record<string, Note> = (() => {
+  try {
+    const raw = readFileSync(join(__dirname, 'notes.json'), 'utf8'); // eslint-disable-line security/detect-non-literal-fs-filename
+    return Object.fromEntries(
+      Object.entries(JSON.parse(raw) as Record<string, Note>).map(([k, v]) => [k.toLowerCase(), v])
+    );
+  } catch {
+    return {};
+  }
+})();
 
 const command: PrefixCommand = {
   name: 'note',
@@ -31,10 +33,9 @@ const command: PrefixCommand = {
 
   async execute(message: Message, args: string[]): Promise<void> {
     if (args.length > 0 && NOTES[args[0].toLowerCase()]) {
-      const raw = NOTES[args[0].toLowerCase()];
-      const lines = raw.split('\n', 2);
-      const title = lines[0];
-      const description = lines.length > 1 ? lines[1] : '';
+      const note = NOTES[args[0].toLowerCase()];
+      const title = note.title || '';
+      const description = note.description || '';
 
       const container = new ContainerBuilder()
         .setAccentColor(0x1e90ff)
@@ -80,5 +81,4 @@ const command: PrefixCommand = {
     });
   },
 };
-
 export default command;
