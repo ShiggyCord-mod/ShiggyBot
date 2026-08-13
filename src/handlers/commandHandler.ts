@@ -14,7 +14,16 @@ export class CommandHandler {
       contextCommands: Collection<string, ContextCommand>;
     }
   ) {
-    this.commandsPath = join(import.meta.dir, '..', 'commands');
+    // Use import.meta.dir for dev (src/handlers -> src/commands)
+    // Use process.cwd() for bundled (dist/index.js -> src/commands)
+    const basePath =
+      import.meta.dir.includes('/handlers') || import.meta.dir.includes('\\handlers')
+        ? import.meta.dir
+        : process.cwd();
+    this.commandsPath = join(basePath, '..', 'commands');
+    if (!basePath.includes('/handlers') && !basePath.includes('\\handlers')) {
+      this.commandsPath = join(basePath, 'src', 'commands');
+    }
   }
 
   async loadCommands(): Promise<void> {

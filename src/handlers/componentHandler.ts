@@ -14,7 +14,14 @@ export class ComponentHandler {
       modals: Collection<string, ModalCommand>;
     }
   ) {
-    this.handlersPath = join(import.meta.dir, '..', 'components', 'handlers');
+    const basePath =
+      import.meta.dir.includes('/handlers') || import.meta.dir.includes('\\handlers')
+        ? import.meta.dir
+        : process.cwd();
+    this.handlersPath = join(basePath, '..', 'components', 'handlers');
+    if (!basePath.includes('/handlers') && !basePath.includes('\\handlers')) {
+      this.handlersPath = join(basePath, 'src', 'components', 'handlers');
+    }
   }
 
   async loadComponents(): Promise<void> {

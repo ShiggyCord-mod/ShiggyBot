@@ -7,7 +7,14 @@ export class EventHandler {
   private eventsPath: string;
 
   constructor(private client: Client) {
-    this.eventsPath = join(import.meta.dir, '..', 'bot', 'events');
+    const basePath =
+      import.meta.dir.includes('/handlers') || import.meta.dir.includes('\\handlers')
+        ? import.meta.dir
+        : process.cwd();
+    this.eventsPath = join(basePath, '..', 'bot', 'events');
+    if (!basePath.includes('/handlers') && !basePath.includes('\\handlers')) {
+      this.eventsPath = join(basePath, 'src', 'bot', 'events');
+    }
   }
 
   async loadEvents(): Promise<void> {
