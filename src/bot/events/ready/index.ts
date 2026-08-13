@@ -8,6 +8,7 @@ import { getEnvironment } from '@config/environment.js';
 import { PresenceFeature } from '@features/presence';
 import { AutoModerationFeature } from '@features/autoModeration';
 import { DashboardFeature } from '@features/dashboard';
+import { banCheckService } from '@features/autoModeration/banCheckService.js';
 import type { BotClient } from '@bot/client.js';
 
 const event: Event = {
@@ -37,6 +38,12 @@ const event: Event = {
 
     const autoModeration = new AutoModerationFeature(client);
     autoModeration.start();
+
+    try {
+      await banCheckService.start(client as BotClient);
+    } catch (error) {
+      logger.error('Failed to start ban check service', { error: error as Error });
+    }
 
     try {
       const dashboard = new DashboardFeature(client as BotClient, {

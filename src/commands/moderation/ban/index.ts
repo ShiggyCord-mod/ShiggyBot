@@ -66,7 +66,8 @@ const command: PrefixCommand = {
       await user.ban({ deleteMessageSeconds: PURGE_DAYS * 24 * 60 * 60, reason });
 
       if (durationMs !== null) {
-        database.disableCommand(message.guild.id, command.name, message.author.id);
+        const unbanAt = new Date(Date.now() + durationMs);
+        database.createTimedBan(message.guild.id, user.id, unbanAt, message.author.id, reason);
       }
 
       const avatarUrl = user.user.displayAvatarURL();

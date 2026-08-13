@@ -120,6 +120,16 @@ export class DatabaseClient {
         updatedAt TEXT NOT NULL
       );
 
+      CREATE TABLE IF NOT EXISTS timed_bans (
+        id TEXT PRIMARY KEY,
+        guildId TEXT NOT NULL,
+        userId TEXT NOT NULL,
+        unbanAt TEXT NOT NULL,
+        bannedBy TEXT NOT NULL,
+        reason TEXT,
+        createdAt TEXT NOT NULL
+      );
+
       CREATE INDEX IF NOT EXISTS idx_users_discordId ON users(discordId);
       CREATE INDEX IF NOT EXISTS idx_guilds_discordId ON guilds(discordId);
       CREATE INDEX IF NOT EXISTS idx_warns_userId ON warns(userId);
@@ -128,6 +138,8 @@ export class DatabaseClient {
       CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(name);
       CREATE INDEX IF NOT EXISTS idx_disabled_commands_guildId ON disabled_commands(guildId);
       CREATE INDEX IF NOT EXISTS idx_welcome_roles_guildId ON welcome_roles(guildId);
+      CREATE INDEX IF NOT EXISTS idx_timed_bans_unbanAt ON timed_bans(unbanAt);
+      CREATE INDEX IF NOT EXISTS idx_timed_bans_guildId ON timed_bans(guildId);
     `);
 
     logger.info('Database tables initialized');
@@ -471,6 +483,51 @@ export class DatabaseClient {
       }
     } catch (error) {
       logger.error('Error setting welcome role', { error: error as Error });
+    }
+  }
+
+  createTimedBan(
+    guildId: string,
+    userId: string,
+    unbanAt: Date,
+    bannedBy: string,
+    reason?: string
+  ): void {
+    try {
+      this.db
+        .query(
+          'INSERT OR IGNORE INTO timed_bans (id, guildId, userId, unbanAt, bannedBy, reason, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        )
+        .run(
+          crypto.randomUUID(),
+          guildId,
+          userId,
+          unbanAt.toISOString(),
+          bannedBy,
+          reason ?? null,
+          new Date().toISOString()
+        );
+    } catch (error) {
+      logger.error('Error creating timed ban', { error: error as Error });
+    }
+  }
+
+  getExpiredBans(): Array<{ id: string; guildId: string; userId: string }> {
+    try {
+      return this.db
+        .query('SELECT id, guildId, userId FROM timed_bans WHERE unbanAt <= ? ORDER BY unbanAt ASC')
+        .all(new Date().toISOString()) as Array<{ id: string; guildId: string; userId: string }>;
+    } catch (error) {
+      logger.error('Error getting expired bans', { error: error as Error });
+      return [];
+    }
+  }
+
+  removeTimedBan(id: string): void {
+    try {
+      this.db.query('DELETE FROM timed_bans WHERE id = ?').run(id);
+    } catch (error) {
+      logger.error('Error removing timed ban', { error: error as Error });
     }
   }
 }
