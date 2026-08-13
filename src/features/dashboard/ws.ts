@@ -6,6 +6,10 @@ type Socket = ServerWebSocket<{ channelIds: Set<string> }>;
 export class SubscriptionHub {
   private readonly sockets = new Map<Socket, Set<string>>();
 
+  get socketCount(): number {
+    return this.sockets.size;
+  }
+
   add(ws: Socket): void {
     this.sockets.set(ws, ws.data.channelIds);
   }

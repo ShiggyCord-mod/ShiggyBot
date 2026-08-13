@@ -9,6 +9,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      DISCORD_TOKEN: "dummy_token_for_testing"
+      DISCORD_CLIENT_ID: "123456789012345678"
+      BOT_ENV: "test"
     steps:
       - uses: actions/checkout@v4
 

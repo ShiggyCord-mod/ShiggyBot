@@ -15,13 +15,17 @@ export class DashboardFeature {
   private readonly client: BotClient;
   private readonly options: DashboardOptions;
   private readonly hub = new SubscriptionHub();
-  private readonly startedAt: number;
+  public readonly startedAt: number;
   private server: ReturnType<typeof createDashboardServer> | null = null;
 
   constructor(client: BotClient, options: DashboardOptions) {
     this.client = client;
     this.options = options;
     this.startedAt = Date.now();
+  }
+
+  get socketCount(): number {
+    return this.hub.socketCount;
   }
 
   start(): void {

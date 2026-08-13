@@ -46,6 +46,7 @@ const event: Event = {
         webDir: env.DASHBOARD_WEB_DIR,
       });
       dashboard.start();
+      (client as BotClient).dashboard = dashboard;
     } catch (error) {
       logger.error('Failed to start dashboard', { context: 'Ready', error: error as Error });
     }

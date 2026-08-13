@@ -13,6 +13,7 @@ import type {
   ModalCommand,
 } from '@dtypes/bot';
 import { CommandHandler, EventHandler, ComponentHandler } from '@handlers/index.js';
+import { DashboardFeature } from '@features/dashboard';
 
 export class BotClient extends Client {
   public commands: Collection<string, SlashCommand> = new Collection();
@@ -22,6 +23,7 @@ export class BotClient extends Client {
   public selects: Collection<string, SelectCommand> = new Collection();
   public modals: Collection<string, ModalCommand> = new Collection();
   public cooldowns: Collection<Snowflake, Collection<string, number>> = new Collection();
+  public dashboard?: DashboardFeature;
 
   private commandHandler: CommandHandler;
   private eventHandler: EventHandler;
