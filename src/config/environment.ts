@@ -26,8 +26,8 @@ const envSchema = z.object({
   DATABASE_URL: z.string().optional(),
 
   DASHBOARD_TOKEN: z.string().optional(),
-  DASHBOARD_HOST: z.string().default('127.0.0.1'),
-  DASHBOARD_PORT: z.coerce.number().min(1).max(65535).default(3000),
+  DASHBOARD_HOST: z.string().default('0.0.0.0'),
+  DASHBOARD_PORT: z.coerce.number().min(1).max(65535).default(13919),
   DASHBOARD_WEB_DIR: z.string().default('./web/dist'),
   DASHBOARD_AUTO_BUILD: z
     .enum(['true', 'false'])
