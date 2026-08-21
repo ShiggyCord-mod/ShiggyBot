@@ -57,11 +57,18 @@ export class BotClient extends Client {
         ReactionManager: 50,
         GuildMemberManager: {
           maxSize: 250,
-          keepOverLimit: (member: GuildMember) => member.id === self?.user?.id,
+          // guard against undefined members from the library internals
+          keepOverLimit: (member?: GuildMember | null) => {
+            if (!member) return false;
+            return member.id === self?.user?.id;
+          },
         },
         UserManager: {
           maxSize: 5000,
-          keepOverLimit: (user: User) => user.id === self?.user?.id,
+          keepOverLimit: (user?: User | null) => {
+            if (!user) return false;
+            return user.id === self?.user?.id;
+          },
         },
         PresenceManager: 250,
         VoiceStateManager: 250,
@@ -71,16 +78,31 @@ export class BotClient extends Client {
         messages: { interval: 300, lifetime: 600 },
         guildMembers: {
           interval: 3600,
-          filter: (member: GuildMember) => member.id !== self?.user?.id,
+          filter: (member?: GuildMember | null) => {
+            if (!member) return false;
+            return member.id !== self?.user?.id;
+          },
         },
-        users: { interval: 3600, filter: (user: User) => user.id !== self?.user?.id },
+        users: {
+          interval: 3600,
+          filter: (user?: User | null) => {
+            if (!user) return false;
+            return user.id !== self?.user?.id;
+          },
+        },
         presences: {
           interval: 3600,
-          filter: (presence: Presence) => presence.userId !== self?.user?.id,
+          filter: (presence?: Presence | null) => {
+            if (!presence) return false;
+            return presence.userId !== self?.user?.id;
+          },
         },
         voiceStates: {
           interval: 3600,
-          filter: (voiceState: VoiceState) => voiceState.id !== self?.user?.id,
+          filter: (voiceState?: VoiceState | null) => {
+            if (!voiceState) return false;
+            return voiceState.id !== self?.user?.id;
+          },
         },
       },
     };
@@ -111,11 +133,42 @@ export class BotClient extends Client {
       await this.componentHandler.loadComponents();
       logger.info('Components loaded', { context: 'BotClient' });
 
-      await this.login(env.DISCORD_TOKEN);
+      logger.info('Checking outbound connectivity to discord.com', { context: 'BotClient' });
+      try {
+        // quick network check to detect blocked egress
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        try {
+          // attempt a lightweight request
+
+          await fetch('https://discord.com/', { signal: controller.signal });
+          logger.info('Outbound connectivity check to discord.com succeeded', {
+            context: 'BotClient',
+          });
+        } finally {
+          clearTimeout(timeout);
+        }
+      } catch (netErr) {
+        logger.warn('Outbound connectivity check to discord.com failed; login may hang or fail', {
+          context: 'BotClient',
+          error: netErr as Error,
+        });
+      }
+
+      logger.info('Attempting Discord login (30s timeout)...', { context: 'BotClient' });
+      const loginPromise = this.login(env.DISCORD_TOKEN);
+      await Promise.race([
+        loginPromise,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Login timeout')), 30000)
+        ),
+      ]);
+      // if loginResult fulfilled, we are logged in
       logger.info('Bot logged in', { context: 'BotClient' });
     } catch (error) {
       logger.error('Failed to start bot', { context: 'BotClient', error: error as Error });
-      process.exit(1);
+      // give a little time for logs to flush
+      setTimeout(() => process.exit(1), 1000);
     }
   }
 
