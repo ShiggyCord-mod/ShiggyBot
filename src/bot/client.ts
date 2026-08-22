@@ -78,28 +78,28 @@ export class BotClient extends Client {
         messages: { interval: 300, lifetime: 600 },
         guildMembers: {
           interval: 3600,
-          filter: (member?: GuildMember | null) => {
+          filter: () => (member?: GuildMember | null) => {
             if (!member) return false;
             return member.id !== self?.user?.id;
           },
         },
         users: {
           interval: 3600,
-          filter: (user?: User | null) => {
+          filter: () => (user?: User | null) => {
             if (!user) return false;
             return user.id !== self?.user?.id;
           },
         },
         presences: {
           interval: 3600,
-          filter: (presence?: Presence | null) => {
+          filter: () => (presence?: Presence | null) => {
             if (!presence) return false;
             return presence.userId !== self?.user?.id;
           },
         },
         voiceStates: {
           interval: 3600,
-          filter: (voiceState?: VoiceState | null) => {
+          filter: () => (voiceState?: VoiceState | null) => {
             if (!voiceState) return false;
             return voiceState.id !== self?.user?.id;
           },
