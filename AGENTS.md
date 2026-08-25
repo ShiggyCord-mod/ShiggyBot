@@ -69,7 +69,7 @@ Default prefix: `!`. Commands are case-insensitive. Auto-discovered from `src/co
 | `!help` | utility | Interactive help with select menu; lists all commands by category |
 | `!note <key>` | utility | Load structured notes from `src/commands/utility/note/notes.json` |
 | `!stats` | utility | Bot stats (uptime, ping, message count) |
-| `!ban <user> [duration] [reason]` | moderation | Timed bans; reply-to support; persists to DB |
+| `!ban <user> [duration] [reason]` | moderation | Timed bans; reply-to support; persists to DB; accepts mention/name/ID (bans non-members by ID) |
 | `!kick <user> [reason]` | moderation | Kick user; reply-to support |
 | `!timeout <user> [duration]` | moderation | Timeout (mute) user; reply-to support |
 | `!purge <count>` | moderation | Delete 1–100 messages; 14-day Discord API limit |

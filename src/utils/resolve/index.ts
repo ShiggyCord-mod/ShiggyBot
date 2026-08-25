@@ -1,5 +1,11 @@
 import type { Guild, GuildMember, Role, Message } from 'discord.js';
 
+export function extractUserId(input: string): string | null {
+  const mentionMatch = input.match(/^<@!?(\d+)>$/);
+  if (mentionMatch) return mentionMatch[1];
+  return /^\d{17,19}$/.test(input) ? input : null;
+}
+
 export async function resolveUser(guild: Guild, input: string): Promise<GuildMember | null> {
   const mentionMatch = input.match(/^<@!?(\d+)>$/);
   if (mentionMatch) {

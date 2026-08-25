@@ -1,5 +1,5 @@
 import { MessageFlags, TextChannel, PermissionFlagsBits } from 'discord.js';
-import type { Message } from 'discord.js';
+import type { Message, User, GuildMember } from 'discord.js';
 import type { PrefixCommand } from '@dtypes/bot';
 import {
   ContainerBuilder,
@@ -9,7 +9,7 @@ import {
   SectionBuilder,
   ThumbnailBuilder,
 } from 'discord.js';
-import { resolveUser, parseDuration } from '@utils/resolve';
+import { resolveUser, parseDuration, extractUserId } from '@utils/resolve';
 import { database } from '@database/index.js';
 import { logger } from '@logger/index.js';
 
@@ -27,11 +27,20 @@ const command: PrefixCommand = {
   async execute(message: Message, args: string[]): Promise<void> {
     if (!message.guild) return;
 
-    let user = message.reference?.messageId
-      ? (await message.channel.messages.fetch(message.reference.messageId)).member
-      : null;
+    let member: GuildMember | null = null;
+    let repliedUserId: string | null = null;
 
-    const offset = user ? 0 : 1;
+    if (message.reference?.messageId) {
+      try {
+        const replied = await message.channel.messages.fetch(message.reference.messageId);
+        member = replied.member ?? null;
+        repliedUserId = replied.author.id;
+      } catch {
+        // reference unavailable; fall through to argument parsing
+      }
+    }
+
+    const offset = member || repliedUserId ? 0 : 1;
 
     if (args.length < offset) {
       await sendUsage(message);
@@ -39,7 +48,21 @@ const command: PrefixCommand = {
     }
 
     if (offset === 1) {
-      user = await resolveUser(message.guild, args[0]);
+      member = await resolveUser(message.guild, args[0]);
+    }
+
+    let user: User | null = member?.user ?? null;
+
+    if (!user) {
+      const candidateId = offset === 1 ? extractUserId(args[0]) : repliedUserId;
+
+      if (candidateId) {
+        try {
+          user = await message.client.users.fetch(candidateId);
+        } catch {
+          user = null;
+        }
+      }
     }
 
     if (!user) {
@@ -64,7 +87,10 @@ const command: PrefixCommand = {
       args.length > reasonStart ? args.slice(reasonStart).join(' ') : 'No reason provided';
 
     try {
-      await user.ban({ deleteMessageSeconds: PURGE_DAYS * 24 * 60 * 60, reason });
+      await message.guild.members.ban(user.id, {
+        deleteMessageSeconds: PURGE_DAYS * 24 * 60 * 60,
+        reason,
+      });
 
       if (durationMs !== null) {
         const unbanAt = new Date(Date.now() + durationMs);
@@ -134,7 +160,7 @@ const command: PrefixCommand = {
         }
       }
 
-      const avatarUrl = user.user.displayAvatarURL();
+      const avatarUrl = user.displayAvatarURL();
 
       const container = new ContainerBuilder()
         .setAccentColor(0xff0000)
@@ -150,7 +176,7 @@ const command: PrefixCommand = {
         )
         .addTextDisplayComponents(
           new TextDisplayBuilder().setContent(
-            `**User:** ${user}\n**Moderator:** ${message.author.username}\n**Reason:** ${reason}${rawDuration ? `\n**Duration:** ${rawDuration}` : ''}`
+            `**User:** <@${user.id}> (${user.id})\n**Moderator:** ${message.author.username}\n**Reason:** ${reason}${rawDuration ? `\n**Duration:** ${rawDuration}` : ''}`
           )
         );
 
@@ -169,7 +195,7 @@ async function sendUsage(message: Message): Promise<void> {
     .setAccentColor(0xffa500)
     .addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
-        '# \u{1f6e1}\ufe0f Ban Command\n\nBan a user from the server\n\n## Usage\n`ban <user> [duration] [reason]`\n\n## Reply Usage\nReply to a message with `ban [duration] [reason]`\n\n## Duration Format\n\u{1f552} s = seconds, m = minutes, h = hours, d = days (optional)\n\n## Example\n`ban @user 7d Breaking rules`'
+        '# \u{1f6e1}\ufe0f Ban Command\n\nBan a user from the server\n\n## Usage\n`ban <@user|userID> [duration] [reason]`\n\n## Reply Usage\nReply to a message with `ban [duration] [reason]`\n\n## Notes\nWorks with mentions, names, or user IDs \u2014 including users not currently in the server (ID or mention required)\n\n## Duration Format\n\u{1f552} s = seconds, m = minutes, h = hours, d = days (optional)\n\n## Example\n`ban @user 7d Breaking rules`\n`ban 123456789012345678 30d Raiding`'
       )
     );
 
